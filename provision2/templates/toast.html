@@ -1,0 +1,42 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<script type="text/javascript">
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "preventDuplicates": true,
+        "onclick": null,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    };
+
+    function mostraErrore(messaggio) {
+        toastr.error(messaggio);
+    }
+
+    function mostraSuccesso(messaggio) {
+        toastr.success(messaggio);
+    }
+
+    // Mostra i messaggi
+    $(document).ready(function() {
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                mostraErrore("{{ message }}");
+            {% elif message.tags == 'success' %}
+                mostraSuccesso("{{ message }}");
+            {% endif %}
+        {% endfor %}
+    });
+</script>

@@ -1,0 +1,17 @@
+<!-- template per la home dell'utente loggato -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block head %}
+    <style>
+
+    </style>
+{% endblock %}
+
+
+{% block content %}
+    {% include 'navbar.html'%}
+    <p> {{ user.username }}</p>
+{% endblock %}

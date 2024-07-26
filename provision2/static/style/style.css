@@ -1,0 +1,27 @@
+/***************************************************************************************************/
+/* NAVBAR */
+/***************************************************************************************************/
+.navbar-nav li {
+    margin-left: 35px;
+}
+
+.large-italic-text {
+    font-size: 18px;
+    font-style: italic;
+}
+
+nav.my-custom-navbar.navbar-light {
+    background-color: #008080 !important;
+}
+
+/* Cambia il colore del testo nella navbar */
+.my-custom-navbar .nav-link {
+    color: #ffffff !important;
+}
+
+/* Cambia il colore del testo quando si passa sopra un link nella navbar */
+.my-custom-navbar .nav-link:hover {
+    color: white !important;
+}
+
+
