@@ -4,7 +4,11 @@ from .views import *
 app_name = 'mainapp'
 urlpatterns = [
 
+    # View per visualizzare la lista di fornitori ed inserire un nuovo fornitore
     path("situazione_fornitori/",situazione_fornitori,name="situazione_fornitori"),
+    
+    # View per eliminare un fornitore 
+    path("elimina_fornitore/<int:pk>/",elimina_fornitore,name="elimina_fornitore"),
     
     # URL al quale importo un listino da un file excel 
     path('import-listino/', ImportListinoView.as_view(), name='import_listino'),

@@ -1,0 +1,28 @@
+# TODO Maschere per le anagrafiche;
+
+# TODO Visualizzazione listini
+
+# TODO gestione marchio nella maschera di inserimento fatture, legata anche all'utente
+
+# TODO gruppi per l'utente amministratore - acquisti - amministrazione /marchio
+
+# TODO modello per le fatture, associate alle righe, la fattura non è un oggetto con le righe, le righe sono in relazione con la fattura 
+
+# TODO stampa su pdf dell'oggetto fattura con le varie righe raggruppate 
+
+# TODO durante il caricamento del listino da file excel, eliminare le righe vuote 
+
+# TODO rendere disponibile il template excel del listino per il download all'utente amministrazione 
+
+
+
+
+
+
+
+# -------------------------------------------------------- #
+# Test da eseguire
+# TODO  Eliminazione di una voce di anagrafica con lostino associato deve impedirlo con il giusto messaggio di errore
+
+# TODO Caricamento di anagrafica da file excel, se ci sono tutti i campi e la data è la stessa allora lascia perdere
+#       Se la data è diversa fa un aggiornamento

@@ -6,49 +6,18 @@ from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
 from django.urls import reverse
-from django.db.models import Q
+from django.db.models import Q, ProtectedError
 from django.core.paginator import Paginator
-
 from .models import Fornitore, Magazzino, Mezzo, Tipologia, Zona, Listino, InserimentoFallito
-
 from openpyxl import load_workbook
 import pandas as pd
-
 import json
 import io
-
-
-
 from django.shortcuts import render
 from django.contrib import messages
 from .models import Fornitore
 
 
-
-"""
-def situazione_fornitori(request):
-    all_fornitori = Fornitore.objects.all().order_by('fornitore_nome')
-    context = {
-        'fornitori': all_fornitori
-    }
-
-    if request.method == 'GET':
-        return render(request, 'mainapp/situazione_fornitori.html', context)
-    else:
-        nome = request.POST.get('fornitore_nome')
-        cod_as = request.POST.get('fornitore_cod_as')
-
-        if not nome or not cod_as:
-            messages.error(request, 'I campi non possono essere vuoti')
-        elif Fornitore.objects.filter(fornitore_cod_as=cod_as).exists():
-            messages.error(request, 'Il codice AS è già presente')
-        else:
-            new_fornitore = Fornitore(fornitore_nome=nome, fornitore_cod_as=cod_as)
-            new_fornitore.save()
-            messages.success(request, 'Fornitore creato con successo')
-
-        return render(request, 'mainapp/situazione_fornitori.html', context)
-"""
 def situazione_fornitori(request):
     # Ottieni tutti i fornitori ordinati per nome
     all_fornitori = Fornitore.objects.all().order_by('fornitore_nome')
@@ -82,15 +51,15 @@ def situazione_fornitori(request):
 # Funzione per eliminare un fornitore (opzionale)
 def elimina_fornitore(request, pk):
     if request.method == 'POST':
-        fornitore = Fornitore.objects.get(pk=pk)
-        fornitore.delete()
-        messages.success(request, 'Fornitore eliminato con successo')
+        fornitore = get_object_or_404(Fornitore, pk=pk)
+        try:
+            fornitore.delete()
+            messages.success(request, 'Fornitore eliminato con successo')
+        except ProtectedError:
+            listini_associati = Listino.objects.filter(fornitore=fornitore).count()
+            messages.error(request, f'Impossibile eliminare il fornitore. Ci sono {listini_associati} listini associati.')
+    
     return redirect('mainapp:situazione_fornitori')
-
-
-
-
-
 
 
 

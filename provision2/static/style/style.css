@@ -73,14 +73,14 @@ nav.my-custom-navbar.navbar-light {
 /***************************************************************************************************/
 .breadcrumb{
     background-color: #5F9EA0 !important;
-    max-height: 50px;    
+    max-height: 80px;    
 }
 .breadcrumb-item a {
     color: white; /* Colore del link */
-    font-size: 15px;
+    font-size: 25px;
 }
 
 .breadcrumb-item.active {
     color: white; /* Colore dell'elemento attivo */
-    font-size: 15px;
+    font-size: 25px;
 }

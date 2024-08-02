@@ -129,7 +129,7 @@
                         <th scope="col">N°</th>
                         <th scope="col">Nome Fornitore</th>
                         <th scope="col">Codice AS</th>
-                        <th></th>
+                        <th scope="col"> Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -139,7 +139,12 @@
                             <td>{{ fornitore.fornitore_nome }}</td>
                             <td>{{ fornitore.fornitore_cod_as }}</td>
                             <td>
-                                <!-- Pulsante di eliminazione se necessario -->
+                                <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_fornitore' fornitore.pk %}">
+                                    {% csrf_token %}
+                                    <button type="button" class="personal-button" title="Elimina" onclick="confirmDelete({{ forloop.counter }})">
+                                        <img src="{% static 'img/cestino.png' %}" width="24px" height="24">
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     {% endfor %}
@@ -237,5 +242,12 @@
         }
         document.getElementById('search').addEventListener('input', handleSearch);
         document.getElementById('search_codice_as').addEventListener('input', handleSearch);
+
+        function confirmDelete(id) {
+            var isConfirmed = confirm("Sei sicuro di voler eliminare questo fornitore?");
+            if (isConfirmed) {
+                document.getElementById("deleteForm_" + id).submit();
+            }
+        }
     </script>
 {% endblock %}
