@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+<style>
+    #container_fornitori {
+        width: 100%;
+        margin: auto; 
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .label-container {
+        margin: auto;
+        text-align: center;
+    }
+
+    .table-container {
+        width: 70%; 
+        margin-left: 20px;
+    }
+
+    .search-container {
+        width: 15%;
+        margin-right: 20px;
+    }
+
+    #search, #search_codice_as {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .pagination .page-link.teal {
+        color: teal;
+    }
+
+    .pagination .page-item.active .page-link.teal {
+        background-color: teal;
+        border-color: teal;
+        color: white;
+    }
+
+    .pagination .page-item.page-counter .page-link {
+        color: white;
+        background-color: teal;
+        border-color: teal;
+    }
+
+    .expandable-cell {
+        max-width: 200px;
+        position: relative;
+        padding-right: 20px;
+    }
+
+    .expandable-cell .content {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .expandable-cell.expanded .content {
+        white-space: normal;
+        overflow: visible;
+        max-height: none;
+    }
+
+    .expand-arrow {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-size: 0.8em;
+        color: #888;
+    }
+
+    .expandable-cell.expanded .expand-arrow::after {
+        content: '▲';
+    }
+
+    .expandable-cell:not(.expanded) .expand-arrow::after {
+        content: '▼';
+    }
+
+    .blue-button {
+        background-color: teal;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .blue-button:hover {
+        background-color: #007a7a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Fornitori</li>
+        </ol>
+    </nav>
+
+    <div id="container_fornitori">
+        <div class="search-container">
+            <label for="search">Ricerca per nome:</label>
+            <input type="text" id="search" class="form-control" placeholder="Cerca per nome fornitore" />
+
+            <label for="search_codice_as">Ricerca per codice AS:</label>
+            <input type="text" id="search_codice_as" class="form-control" placeholder="Cerca per codice AS" />
+
+            <div style="margin-top: 20px;">
+                <button type="button" class="blue-button" data-toggle="modal" data-target="#exampleModal">
+                    Aggiungi Fornitore
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table table-hover dataTable">
+                <thead>
+                    <tr>
+                        <th scope="col">N°</th>
+                        <th scope="col">Nome Fornitore</th>
+                        <th scope="col">Codice AS</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fornitore in page_obj %}
+                        <tr>
+                            <th scope="row">{{ forloop.counter|add:page_obj.start_index|add:-1 }}</th>
+                            <td>{{ fornitore.fornitore_nome }}</td>
+                            <td>{{ fornitore.fornitore_cod_as }}</td>
+                            <td>
+                                <!-- Pulsante di eliminazione se necessario -->
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Paginazione -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page=1">Prima</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page={{ page_obj.previous_page_number }}">Precedente</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Prima</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Precedente</span>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active page-counter">
+                        <span class="page-link teal">
+                            Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page={{ page_obj.next_page_number }}">Successiva</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page={{ page_obj.paginator.num_pages }}">Ultima</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Successiva</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Ultima</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Modal per l'aggiunta del fornitore -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: teal">
+                    <h5 class="modal-title" id="exampleModalLabel" style="color: white">Aggiungi Fornitore</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'mainapp:situazione_fornitori' %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="modalNome">Nome Fornitore:</label>
+                            <input type="text" class="form-control" id="modalNome" name="fornitore_nome">
+                        </div>
+                        <div class="form-group">
+                            <label for="modalCodAS">Codice AS:</label>
+                            <input type="text" class="form-control" id="modalCodAS" name="fornitore_cod_as">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                            <button type="submit" class="blue-button">Salva</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleSearch() {
+            var searchText = document.getElementById('search').value.toLowerCase();
+            var searchCodeAS = document.getElementById('search_codice_as').value.toLowerCase();
+            var rows = document.querySelectorAll('.dataTable tbody tr');
+            rows.forEach(function (row) {
+                var fornitoreText = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                var codiceASText = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                var showRow = (searchText === '' || fornitoreText.includes(searchText)) &&
+                              (searchCodeAS === '' || codiceASText.includes(searchCodeAS));
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        document.getElementById('search').addEventListener('input', handleSearch);
+        document.getElementById('search_codice_as').addEventListener('input', handleSearch);
+    </script>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+<style>
+    #container_documenti {
+        width: 100%;
+        margin: auto; 
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .label-container {
+        margin: auto;
+        text-align: center;
+    }
+
+    .table-container {
+        width: 100%; 
+        margin: auto;
+    }
+
+    .search-container {
+        margin-bottom: 15px;
+    }
+
+    #filters-container {
+        margin-right: 60px; 
+        flex: 0 0 250px;
+    }
+
+    .form-group-left {
+        max-width: 200px; 
+        max-height: 200px; 
+        overflow-y: auto; 
+    }
+
+    .pagination .page-link.teal {
+        color: teal;
+    }
+
+    .pagination .page-item.active .page-link.teal {
+        background-color: teal;
+        border-color: teal;
+    }
+
+    .pagination .page-item.page-counter .page-link {
+        color: white;
+        background-color: teal;
+        border-color: teal;
+    }
+
+    .container {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .row {
+        flex: 1;
+        display: flex;
+    }
+
+    .col-sm {
+        flex: 1;
+    }
+
+    .expandable-cell {
+        max-width: 200px;
+        position: relative;
+        padding-right: 20px;
+    }
+
+    .expandable-cell .content {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .expandable-cell.expanded .content {
+        white-space: normal;
+        overflow: visible;
+        max-height: none;
+    }
+
+    .expand-arrow {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-size: 0.8em;
+        color: #888;
+    }
+
+    .expandable-cell.expanded .expand-arrow::after {
+        content: '▲';
+    }
+
+    .expandable-cell:not(.expanded) .expand-arrow::after {
+        content: '▼';
+    }
+    .copy-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+    }
+    .red-button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .red-button:hover {
+        background-color: #c82333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}  
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Listini / Inserimenti Falliti</li>
+        </ol>
+    </nav>
+
+    <div class="container" id="container_listini_falliti">
+        <div class="row">
+            <div class="col-sm" id="filters-container">
+                <form method="get" action="{% url 'mainapp:listino_falliti' %}">
+                    <div class="form-group form-group-left">
+                        <label for="data_tentativo"><span style="color: teal; font-size: 16px;">Data tentativo</span></label>
+                        <input type="date" id="data_tentativo" name="data_tentativo" class="form-control" value="{{ data_tentativo }}">
+                    </div>
+                
+                    <div class="form-group form-group-left">
+                        <label for="tipo_errore"><span style="color: teal; font-size: 16px;"> Tipo di errore</span></label>
+                        <input type="text" id="tipo_errore" name="tipo_errore" class="form-control" placeholder="Tipo di errore" value="{{ tipo_errore }}">
+                    </div>
+                
+                    <div class="form-group form-group-left" style="margin-top: 5px;">
+                        <button type="submit" class="blue-button">Filtra</button>
+                    </div>
+                    <div class="form-group form-group-left" style="margin-top: 5px;">
+                        <button type="button" onclick="window.location.href='{% url 'mainapp:listino_falliti' %}'" class="blue-button">Rimuovi Filtri</button>
+                    </div>
+                </form>
+                <div class="form-group form-group-left" style="margin-top: 20px;">
+                    <button onclick="confirmDeleteAll()" class="red-button">Cancella tutti gli inserimenti falliti</button>
+                </div>
+            </div>
+
+            <div class="col-sm" id="table-container">
+                <div class="label-container">
+                    <div class="table-container">
+                        <table class="table table-hover dataTable" id="table-2">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Dati Riga</th>
+                                    <th scope="col">Errore</th>
+                                    <th scope="col">Data Tentativo</th>
+                                    <th scope="col">Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inserimento in lista_falliti %}
+                                    <tr>
+                                        <td>{{ forloop.counter|add:page_obj.start_index|add:-1 }}</td>
+                                        <td>{{ inserimento.id }}</td>
+                                        <td class="expandable-cell">
+                                            <div class="content">{{ inserimento.dati_riga }}</div>
+                                            <span class="expand-arrow" onclick="toggleExpand(this.parentNode)" title="Espandi/Comprimi"></span>
+                                        </td>
+                                        <td>{{ inserimento.errore }}</td>
+                                        <td>{{ inserimento.data_tentativo|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <div style="display: inline-block; margin-left: 0px; margin-right: 10px;">
+                                                <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_inserimento_fallito' inserimento.pk %}">
+                                                    {% csrf_token %}
+                                                    <button type="button" class="personal-button" title="Elimina" onclick="confirmDelete({{ forloop.counter }})">
+                                                        <img src="{% static 'img/cestino.png' %}" width="24px" height="24">
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            <button class="copy-button" title="Copia dati" onclick="copyRowData(this.parentNode.parentNode)">
+                                                <img src="{% static 'img/copia.png' %}" width="24px" height="24">
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="pagination">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link teal" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Prima pag</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link teal" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Indietro</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link teal">Prima pag</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link teal">Indietro</span>
+                                </li>
+                            {% endif %}
+                
+                            <li class="page-item active page-counter" aria-current="page">
+                                <span class="page-link teal">
+                                    Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
+                                    <span class="sr-only">(current)</span>
+                                </span>
+                            </li>
+                
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link teal" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Avanti</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link teal" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Ultima pag</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link teal">Avanti</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link teal">Ultima pag</span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(doc_id) {
+            var isConfirmed = confirm("Sei sicuro di voler eliminare questo inserimento fallito?");
+            if (isConfirmed) {
+                document.getElementById("deleteForm_" + doc_id).submit();
+            }
+        }
+
+        function toggleExpand(element) {
+            element.classList.toggle('expanded');
+        }
+
+        function copyRowData(row) {
+            var datiRiga = row.querySelector('.expandable-cell .content').textContent;
+            var datiObj = JSON.parse(datiRiga.replace(/'/g, '"'));
+            var copiaDati = Object.values(datiObj).join('\t');
+
+            var tempTextArea = document.createElement("textarea");
+            tempTextArea.value = copiaDati;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempTextArea);
+
+            alert("Dati copiati negli appunti!");
+        }
+
+        function confirmDeleteAll() {
+            var isConfirmed = confirm("Sei sicuro di voler cancellare tutti gli inserimenti falliti? Questa azione non può essere annullata.");
+            if (isConfirmed) {
+                window.location.href = "{% url 'mainapp:delete_all_inserimenti_falliti' %}";
+            }
+        }
+    </script>
+{% endblock %}

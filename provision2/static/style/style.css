@@ -1,3 +1,46 @@
+/* Pulsante con colore di sfondo trasparente, ottimo per le icone */
+.personal-button {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+
+.my_button{
+    background-color: #00C78C;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.dark-blue-button {
+    background-color: #191970;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+
+.blue-button {
+    background-color: cadetblue;
+    padding: 10px 20px;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.yellow-button{
+    background-color: #FFB90F;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
 /***************************************************************************************************/
 /* NAVBAR */
 /***************************************************************************************************/
@@ -25,3 +68,19 @@ nav.my-custom-navbar.navbar-light {
 }
 
 
+/***************************************************************************************************/
+/* BREADCRUMB */
+/***************************************************************************************************/
+.breadcrumb{
+    background-color: #5F9EA0 !important;
+    max-height: 50px;    
+}
+.breadcrumb-item a {
+    color: white; /* Colore del link */
+    font-size: 15px;
+}
+
+.breadcrumb-item.active {
+    color: white; /* Colore dell'elemento attivo */
+    font-size: 15px;
+}

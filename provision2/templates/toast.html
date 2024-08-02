@@ -28,6 +28,9 @@
     function mostraSuccesso(messaggio) {
         toastr.success(messaggio);
     }
+    function mostraWarning(messaggio) {
+        toastr.warning(messaggio);
+    }
 
     // Mostra i messaggi
     $(document).ready(function() {
@@ -36,6 +39,8 @@
                 mostraErrore("{{ message }}");
             {% elif message.tags == 'success' %}
                 mostraSuccesso("{{ message }}");
+            {% elif message.tags == 'warning' %}
+                mostraWarning("{{ message }}");
             {% endif %}
         {% endfor %}
     });
