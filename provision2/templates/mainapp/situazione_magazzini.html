@@ -3,7 +3,7 @@
 
 {% block head %}
 <style>
-    #container_fornitori {
+    #container_magazzini {
         width: 100%;
         margin: auto; 
         display: flex;
@@ -11,7 +11,7 @@
         padding-left: 20px;  
         padding-right: 20px; 
     }
-    #search, #search_codice_as {
+    #search, #search_lettera, #search_societa {
         width: 100%;
         margin-bottom: 10px;
     }
@@ -23,21 +23,29 @@
 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item active" aria-current="page">Fornitori</li>
+            <li class="breadcrumb-item active" aria-current="page">Magazzini</li>
         </ol>
     </nav>
 
-    <div id="container_fornitori">
+    <div id="container_magazzini">
         <div class="search-container">
             <label for="search">Ricerca per nome:</label>
-            <input type="text" id="search" class="form-control" placeholder="Cerca per nome fornitore" />
+            <input type="text" id="search" class="form-control" placeholder="Cerca per nome magazzino" />
 
-            <label for="search_codice_as">Ricerca per codice AS:</label>
-            <input type="text" id="search_codice_as" class="form-control" placeholder="Cerca per codice AS" />
+            <label for="search_lettera">Ricerca per lettera:</label>
+            <input type="text" id="search_lettera" class="form-control" placeholder="Cerca per lettera magazzino" />
+
+            <label for="search_societa">Filtra per società:</label>
+            <select id="search_societa" class="form-control">
+                <option value="">Tutte le società</option>
+                {% for societa in societa_list %}
+                    <option value="{{ societa.societa_nome }}">{{ societa.societa_nome }}</option>
+                {% endfor %}
+            </select>
 
             <div style="margin-top: 20px;">
                 <button type="button" class="blue-button" data-toggle="modal" data-target="#exampleModal">
-                    Aggiungi Fornitore
+                    Aggiungi Magazzino
                 </button>
             </div>
         </div>
@@ -47,52 +55,64 @@
                 <thead>
                     <tr>
                         <th scope="col">N°</th>
-                        <th scope="col">Nome Fornitore</th>
-                        <th scope="col">Codice AS</th>
-                        <th scope="col"> Azioni</th>
+                        <th scope="col">Nome Magazzino</th>
+                        <th scope="col">Lettera</th>
+                        <th scope="col">Società</th>
+                        <th scope="col">Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for fornitore in page_obj %}
+                    {% for magazzino in page_obj %}
                         <tr>
                             <th scope="row">{{ forloop.counter|add:page_obj.start_index|add:-1 }}</th>
-                            <td>{{ fornitore.fornitore_nome }}</td>
-                            <td>{{ fornitore.fornitore_cod_as }}</td>
+                            <td>{{ magazzino.magazzino_nome }}</td>
+                            <td>{{ magazzino.magazzino_lettera }}</td>
+                            <td>{{ magazzino.societa.societa_nome }}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_fornitore' fornitore.pk %}" style="display: inline;">
+                                    <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_magazzino' magazzino.pk %}" style="display: inline;">
                                         {% csrf_token %}
                                         <button type="button" class="personal-button" title="Elimina" onclick="confirmDelete({{ forloop.counter }})">
                                             <img src="{% static 'img/cestino.png' %}" width="24px" height="24">
                                         </button>
                                     </form>
-                                    <button type="button" class="personal-button" title="Modifica" data-toggle="modal" data-target="#modifyModal_{{ fornitore.pk }}">
+                                    <button type="button" class="personal-button" title="Modifica" data-toggle="modal" data-target="#modifyModal_{{ magazzino.pk }}">
                                         <img src="{% static 'img/modifica.png' %}" width="24px" height="24">
                                     </button>
                                 </div>
                             </td>
                         </tr>
 
-
-                        <div class="modal fade" id="modifyModal_{{ fornitore.pk }}" tabindex="-1" aria-labelledby="modifyModalLabel_{{ fornitore.pk }}" aria-hidden="true">
+                        <div class="modal fade" id="modifyModal_{{ magazzino.pk }}" tabindex="-1" aria-labelledby="modifyModalLabel_{{ magazzino.pk }}" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                                 <div class="modal-content">
                                     <div class="modal-header" style="background-color: teal">
-                                        <h5 class="modal-title" id="modifyModalLabel_{{ fornitore.pk }}" style="color: white">Modifica Fornitore</h5>
+                                        <h5 class="modal-title" id="modifyModalLabel_{{ magazzino.pk }}" style="color: white">Modifica Magazzino</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        <form method="POST" action="{% url 'mainapp:modifica_fornitore' fornitore.pk %}">
+                                        <form method="POST" action="{% url 'mainapp:modifica_magazzino' magazzino.pk %}">
                                             {% csrf_token %}
                                             <div class="form-group">
-                                                <label for="modalNome_{{ fornitore.pk }}">Nome Fornitore:</label>
-                                                <input type="text" class="form-control" id="modalNome_{{ fornitore.pk }}" name="fornitore_nome" value="">
+                                                <label for="modalNome_{{ magazzino.pk }}">Nome Magazzino:</label>
+                                                <input type="text" class="form-control" id="modalNome_{{ magazzino.pk }}" name="magazzino_nome" value="{{ magazzino.magazzino_nome }}">
                                             </div>
                                             <div class="form-group">
-                                                <label for="modalCodAS_{{ fornitore.pk }}">Codice AS:</label>
-                                                <input type="text" class="form-control" id="modalCodAS_{{ fornitore.pk }}" name="fornitore_cod_as" value="">
+                                                <label for="modalLettera_{{ magazzino.pk }}">Lettera Magazzino:</label>
+                                                <input type="text" class="form-control" id="modalLettera_{{ magazzino.pk }}" name="magazzino_lettera" value="{{ magazzino.magazzino_lettera }}">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="modalSocieta_{{ magazzino.pk }}">Società:</label>
+                                                <select class="form-control" id="modalSocieta_{{ magazzino.pk }}" name="societa" required>
+                                                    <option value="" disabled>Seleziona una società</option>
+                                                    {% for societa in societa_list %}
+                                                        <option value="{{ societa.pk }}" {% if societa.pk == magazzino.societa.pk %}selected{% endif %}>
+                                                            {{ societa.societa_nome }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="yellow-button" data-dismiss="modal">Annulla</button>
@@ -152,26 +172,35 @@
         </div>
     </div>
 
-    <!-- Modal per l'aggiunta del fornitore -->
+    <!-- Modal per l'aggiunta del magazzino -->
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header" style="background-color: teal">
-                    <h5 class="modal-title" id="exampleModalLabel" style="color: white">Aggiungi Fornitore</h5>
+                    <h5 class="modal-title" id="exampleModalLabel" style="color: white">Aggiungi Magazzino</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{% url 'mainapp:situazione_fornitori' %}">
+                    <form method="POST" action="{% url 'mainapp:situazione_magazzini' %}">
                         {% csrf_token %}
                         <div class="form-group">
-                            <label for="modalNome">Nome Fornitore:</label>
-                            <input type="text" class="form-control" id="modalNome" name="fornitore_nome">
+                            <label for="modalNome">Nome Magazzino:</label>
+                            <input type="text" class="form-control" id="modalNome" name="magazzino_nome">
                         </div>
                         <div class="form-group">
-                            <label for="modalCodAS">Codice AS:</label>
-                            <input type="text" class="form-control" id="modalCodAS" name="fornitore_cod_as">
+                            <label for="modalLettera">Lettera Magazzino:</label>
+                            <input type="text" class="form-control" id="modalLettera" name="magazzino_lettera">
+                        </div>
+                        <div class="form-group">
+                            <label for="modalSocieta">Società:</label>
+                            <select class="form-control" id="modalSocieta" name="societa" required>
+                                <option value="" selected disabled>Seleziona una società</option>
+                                {% for societa in societa_list %}
+                                    <option value="{{ societa.pk }}">{{ societa.societa_nome }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="yellow-button" data-dismiss="modal">Annulla</button>
@@ -183,25 +212,28 @@
         </div>
     </div>
 
-
     <script>
         function handleSearch() {
             var searchText = document.getElementById('search').value.toLowerCase();
-            var searchCodeAS = document.getElementById('search_codice_as').value.toLowerCase();
+            var searchLettera = document.getElementById('search_lettera').value.toLowerCase();
+            var searchSocieta = document.getElementById('search_societa').value.toLowerCase();
             var rows = document.querySelectorAll('.dataTable tbody tr');
             rows.forEach(function (row) {
-                var fornitoreText = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                var codiceASText = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                var showRow = (searchText === '' || fornitoreText.includes(searchText)) &&
-                              (searchCodeAS === '' || codiceASText.includes(searchCodeAS));
+                var magazzinoText = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                var letteraText = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                var societaText = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                var showRow = (searchText === '' || magazzinoText.includes(searchText)) &&
+                              (searchLettera === '' || letteraText.includes(searchLettera)) &&
+                              (searchSocieta === '' || societaText === searchSocieta);
                 row.style.display = showRow ? '' : 'none';
             });
         }
         document.getElementById('search').addEventListener('input', handleSearch);
-        document.getElementById('search_codice_as').addEventListener('input', handleSearch);
+        document.getElementById('search_lettera').addEventListener('input', handleSearch);
+        document.getElementById('search_societa').addEventListener('change', handleSearch);
 
         function confirmDelete(id) {
-            var isConfirmed = confirm("Sei sicuro di voler eliminare questo fornitore?");
+            var isConfirmed = confirm("Sei sicuro di voler eliminare questo magazzino?");
             if (isConfirmed) {
                 document.getElementById("deleteForm_" + id).submit();
             }

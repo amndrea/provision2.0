@@ -1,10 +1,11 @@
-# TODO Maschere per le anagrafiche;
+# TODO Maschere per le anagrafiche#       
 
 # TODO Visualizzazione listini
 
 # TODO gestione marchio nella maschera di inserimento fatture, legata anche all'utente
 
 # TODO gruppi per l'utente amministratore - acquisti - amministrazione /marchio
+# GESTIRE NELLA NAV E CON I DECORATORI DI FUNZIONE IN BASE A SUPERUSER O GRUPPI UTENTE 
 
 # TODO modello per le fatture, associate alle righe, la fattura non è un oggetto con le righe, le righe sono in relazione con la fattura 
 
@@ -14,6 +15,12 @@
 
 # TODO rendere disponibile il template excel del listino per il download all'utente amministrazione 
 
+# TODO rendere la lettera del magazzino è un campo di testo, volendo posso inserire più di una lettera, questo non è corretto, da fixare
+
+# TODO controllare l'eliminazione delle entità legate ad un listino
+
+# Se incontro una cosa con gli unique toghether, controllo la data, se la data è la stessa allora non faccio niente.
+# Se la data è diversa, faccio un update dei campi diversi nel listino.
 
 
 

@@ -62,13 +62,22 @@
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
                     Anagrafiche
                 </a>
+
+                <!--  CONTROLLO SULL'UTENTE SUPERUSER O SUL GRUPPO DELL'UTENTE AMMINISTRATIVO -->
                 <div class="dropdown-menu">
-                    <a class="dropdown-item" href="{% url 'mainapp:situazione_fornitori' %}">Anagrafiche fornitori</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:situazione_fornitori' %}">Anagrafiche Fornitori</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:situazione_societa' %}">Anagrafiche Società</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:situazione_magazzini' %}">Anagrafiche Magazzini</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:situazione_mezzi' %}">Anagrafiche Mezzi</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:situazione_tipologie' %}">Anagrafiche Tipologie</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:situazione_zone' %}">Anagrafiche Zone</a>
                 </div>
+
+
             </li>
 
             
-            
+            <!-- CONTROLLO SULL'UTENTE SUPERUSER-->
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
                     Utenti

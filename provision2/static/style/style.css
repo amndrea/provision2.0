@@ -23,15 +23,6 @@
     cursor: pointer;
 }
 
-
-.blue-button {
-    background-color: cadetblue;
-    padding: 10px 20px;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
 .yellow-button{
     background-color: #FFB90F;
     color: white;
@@ -83,4 +74,99 @@ nav.my-custom-navbar.navbar-light {
 .breadcrumb-item.active {
     color: white; /* Colore dell'elemento attivo */
     font-size: 25px;
+}
+
+
+
+/***************************************************************************************************/
+/* PAGINE ANAGRAFICHE  */
+/***************************************************************************************************/
+.label-container {
+    margin: auto;
+    text-align: center;
+}
+
+.table-container {
+    width: 70%; 
+    margin-left: 20px;
+}
+
+.search-container {
+    width: 15%;
+    margin-right: 20px;
+}
+
+
+.pagination .page-link.teal {
+    color: teal;
+}
+
+.pagination .page-item.active .page-link.teal {
+    background-color: teal;
+    border-color: teal;
+    color: white;
+}
+
+.pagination .page-item.page-counter .page-link {
+    color: white;
+    background-color: teal;
+    border-color: teal;
+}
+
+.expandable-cell {
+    max-width: 200px;
+    position: relative;
+    padding-right: 20px;
+}
+
+.expandable-cell .content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.expandable-cell.expanded .content {
+    white-space: normal;
+    overflow: visible;
+    max-height: none;
+}
+
+.expand-arrow {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 0.8em;
+    color: #888;
+}
+
+.expandable-cell.expanded .expand-arrow::after {
+    content: '▲';
+}
+
+.expandable-cell:not(.expanded) .expand-arrow::after {
+    content: '▼';
+}
+
+.blue-button {
+    background-color: teal;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.blue-button:hover {
+    background-color: #007a7a;
+}
+.action-buttons {
+    display: flex;
+    gap: 5px; 
+}
+
+.action-buttons form {
+    margin: 0;
 }

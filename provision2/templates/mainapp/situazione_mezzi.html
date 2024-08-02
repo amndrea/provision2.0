@@ -3,7 +3,7 @@
 
 {% block head %}
 <style>
-    #container_fornitori {
+    #container_mezzi {
         width: 100%;
         margin: auto; 
         display: flex;
@@ -11,7 +11,7 @@
         padding-left: 20px;  
         padding-right: 20px; 
     }
-    #search, #search_codice_as {
+    #search {
         width: 100%;
         margin-bottom: 10px;
     }
@@ -23,21 +23,18 @@
 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item active" aria-current="page">Fornitori</li>
+            <li class="breadcrumb-item active" aria-current="page">Mezzi</li>
         </ol>
     </nav>
 
-    <div id="container_fornitori">
+    <div id="container_mezzi">
         <div class="search-container">
             <label for="search">Ricerca per nome:</label>
-            <input type="text" id="search" class="form-control" placeholder="Cerca per nome fornitore" />
-
-            <label for="search_codice_as">Ricerca per codice AS:</label>
-            <input type="text" id="search_codice_as" class="form-control" placeholder="Cerca per codice AS" />
+            <input type="text" id="search" class="form-control" placeholder="Cerca per nome mezzo" />
 
             <div style="margin-top: 20px;">
                 <button type="button" class="blue-button" data-toggle="modal" data-target="#exampleModal">
-                    Aggiungi Fornitore
+                    Aggiungi Mezzo
                 </button>
             </div>
         </div>
@@ -47,52 +44,45 @@
                 <thead>
                     <tr>
                         <th scope="col">N°</th>
-                        <th scope="col">Nome Fornitore</th>
-                        <th scope="col">Codice AS</th>
-                        <th scope="col"> Azioni</th>
+                        <th scope="col">Nome Mezzo</th>
+                        <th scope="col">Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for fornitore in page_obj %}
+                    {% for mezzo in page_obj %}
                         <tr>
                             <th scope="row">{{ forloop.counter|add:page_obj.start_index|add:-1 }}</th>
-                            <td>{{ fornitore.fornitore_nome }}</td>
-                            <td>{{ fornitore.fornitore_cod_as }}</td>
+                            <td>{{ mezzo.mezzo_nome }}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_fornitore' fornitore.pk %}" style="display: inline;">
+                                    <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_mezzo' mezzo.pk %}" style="display: inline;">
                                         {% csrf_token %}
                                         <button type="button" class="personal-button" title="Elimina" onclick="confirmDelete({{ forloop.counter }})">
                                             <img src="{% static 'img/cestino.png' %}" width="24px" height="24">
                                         </button>
                                     </form>
-                                    <button type="button" class="personal-button" title="Modifica" data-toggle="modal" data-target="#modifyModal_{{ fornitore.pk }}">
+                                    <button type="button" class="personal-button" title="Modifica" data-toggle="modal" data-target="#modifyModal_{{ mezzo.pk }}">
                                         <img src="{% static 'img/modifica.png' %}" width="24px" height="24">
                                     </button>
                                 </div>
                             </td>
                         </tr>
 
-
-                        <div class="modal fade" id="modifyModal_{{ fornitore.pk }}" tabindex="-1" aria-labelledby="modifyModalLabel_{{ fornitore.pk }}" aria-hidden="true">
+                        <div class="modal fade" id="modifyModal_{{ mezzo.pk }}" tabindex="-1" aria-labelledby="modifyModalLabel_{{ mezzo.pk }}" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                                 <div class="modal-content">
                                     <div class="modal-header" style="background-color: teal">
-                                        <h5 class="modal-title" id="modifyModalLabel_{{ fornitore.pk }}" style="color: white">Modifica Fornitore</h5>
+                                        <h5 class="modal-title" id="modifyModalLabel_{{ mezzo.pk }}" style="color: white">Modifica Mezzo</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        <form method="POST" action="{% url 'mainapp:modifica_fornitore' fornitore.pk %}">
+                                        <form method="POST" action="{% url 'mainapp:modifica_mezzo' mezzo.pk %}">
                                             {% csrf_token %}
                                             <div class="form-group">
-                                                <label for="modalNome_{{ fornitore.pk }}">Nome Fornitore:</label>
-                                                <input type="text" class="form-control" id="modalNome_{{ fornitore.pk }}" name="fornitore_nome" value="">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="modalCodAS_{{ fornitore.pk }}">Codice AS:</label>
-                                                <input type="text" class="form-control" id="modalCodAS_{{ fornitore.pk }}" name="fornitore_cod_as" value="">
+                                                <label for="modalNome_{{ mezzo.pk }}">Nome Mezzo:</label>
+                                                <input type="text" class="form-control" id="modalNome_{{ mezzo.pk }}" name="mezzo_nome" value="{{ mezzo.mezzo_nome }}">
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="yellow-button" data-dismiss="modal">Annulla</button>
@@ -152,26 +142,22 @@
         </div>
     </div>
 
-    <!-- Modal per l'aggiunta del fornitore -->
+    <!-- Modal per l'aggiunta del mezzo -->
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header" style="background-color: teal">
-                    <h5 class="modal-title" id="exampleModalLabel" style="color: white">Aggiungi Fornitore</h5>
+                    <h5 class="modal-title" id="exampleModalLabel" style="color: white">Aggiungi Mezzo</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{% url 'mainapp:situazione_fornitori' %}">
+                    <form method="POST" action="{% url 'mainapp:situazione_mezzi' %}">
                         {% csrf_token %}
                         <div class="form-group">
-                            <label for="modalNome">Nome Fornitore:</label>
-                            <input type="text" class="form-control" id="modalNome" name="fornitore_nome">
-                        </div>
-                        <div class="form-group">
-                            <label for="modalCodAS">Codice AS:</label>
-                            <input type="text" class="form-control" id="modalCodAS" name="fornitore_cod_as">
+                            <label for="modalNome">Nome Mezzo:</label>
+                            <input type="text" class="form-control" id="modalNome" name="mezzo_nome">
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="yellow-button" data-dismiss="modal">Annulla</button>
@@ -183,25 +169,20 @@
         </div>
     </div>
 
-
     <script>
         function handleSearch() {
             var searchText = document.getElementById('search').value.toLowerCase();
-            var searchCodeAS = document.getElementById('search_codice_as').value.toLowerCase();
             var rows = document.querySelectorAll('.dataTable tbody tr');
             rows.forEach(function (row) {
-                var fornitoreText = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                var codiceASText = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                var showRow = (searchText === '' || fornitoreText.includes(searchText)) &&
-                              (searchCodeAS === '' || codiceASText.includes(searchCodeAS));
+                var mezzoText = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                var showRow = searchText === '' || mezzoText.includes(searchText);
                 row.style.display = showRow ? '' : 'none';
             });
         }
         document.getElementById('search').addEventListener('input', handleSearch);
-        document.getElementById('search_codice_as').addEventListener('input', handleSearch);
 
         function confirmDelete(id) {
-            var isConfirmed = confirm("Sei sicuro di voler eliminare questo fornitore?");
+            var isConfirmed = confirm("Sei sicuro di voler eliminare questo mezzo?");
             if (isConfirmed) {
                 document.getElementById("deleteForm_" + id).submit();
             }

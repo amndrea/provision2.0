@@ -5,7 +5,7 @@ from django.db import models
 # -------------------------------------------------------------------------------------------- #
 # prima colonna del listino, il fornitore che effettua il trasporto
 class Fornitore(models.Model):
-    fornitore_nome = models.CharField(max_length=128, blank=False, null=False)
+    fornitore_nome = models.CharField(max_length=128, blank=False, null=False, unique=False)
     fornitore_cod_as = models.CharField(max_length=8, blank=False, null=False, unique=True)
 
 # -------------------------------------------------------------------------------------------- #
