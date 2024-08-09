@@ -29,16 +29,18 @@ urlpatterns = [
     path('zone/', situazione_zone, name='situazione_zone'),
     path('zone/modifica/<int:pk>/', modifica_zona, name='modifica_zona'),
     path('zone/elimina/<int:pk>/', elimina_zona, name='elimina_zona'),
+    path('import_zone/', ImportZone.as_view(), name="import_zone"),
+
+
+
 
     # URL al quale importo un listino da un file excel 
     path('import-listino/', ImportListinoView.as_view(), name='import_listino'),
-
+    path('listino/',ListinoListView.as_view(), name='listino'),
     # URL al quale visualizzo gli import falliti da listino
     path('listino_falliti/', InserimentoFallitoListView.as_view(), name='listino_falliti'),
-
     # URL al quale elimino un inserimento fallito 
     path('elimina_fallito/<int:pk>/', EliminaInserimentoFallitoView.as_view(), name='elimina_inserimento_fallito'),
-
     # URL con il quale eliminare tutte le righe fallite dal caricamento massivo di un listino falliti
     path('delete-all-inserimenti-falliti/', DeleteAllInserimentiFallitiView.as_view(), name='delete_all_inserimenti_falliti'),
 

@@ -15,6 +15,14 @@
         width: 100%;
         margin-bottom: 10px;
     }
+    .blue-button:hover {
+        background-color: teal;  /* Stesso colore di sfondo */
+        color: white;  /* Stesso colore del testo */
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);  /* Aggiunge una leggera ombra per feedback visivo */
+        }
+    .blue-button:visited {
+        color: white;
+    }  
 </style>
 {% endblock %}
 
@@ -37,6 +45,13 @@
                     Aggiungi Zona
                 </button>
             </div>
+            {% if user.is_staff %}
+                <div style="margin-top: 20px;">
+                    <a href="{% url 'mainapp:import_zone' %}" class="blue-button" style="text-decoration: none; display: inline-block;">
+                        Import da file
+                    </a>
+                </div>
+            {% endif %}
         </div>
 
         <div class="table-container">

@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+<style>
+    #container_listini_falliti {
+        display: flex;
+        width: 100%;
+        height: calc(100vh - 100px); /* Adjust based on your layout */
+        overflow: hidden;
+    }
+
+    #filters-container {
+        flex: 0 0 250px;
+        overflow-y: auto;
+        padding-right: 10px;
+        margin-left: 5px;
+    }
+
+    #table-outer-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #table-scroll-container {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #table-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+
+    #table-container table thead {
+        font-size: 12px;
+    }
+
+    #table-container table tbody {
+        font-size: 12px;
+    }
+
+    .table-responsive {
+        min-width: 100%;
+    }
+
+    .pagination {
+        flex-shrink: 0;
+        padding: 10px 0;
+    }
+
+    /* Existing styles */
+    .form-group-left {
+        max-width: 200px;
+    }
+
+    .pagination .page-link.teal {
+        color: teal;
+    }
+
+    .pagination .page-item.active .page-link.teal {
+        background-color: teal;
+        border-color: teal;
+    }
+
+    .pagination .page-item.page-counter .page-link {
+        color: white;
+        background-color: teal;
+        border-color: teal;
+    }
+
+    @media (max-width: 768px) {
+        #container_listini_falliti {
+            flex-direction: column;
+            height: auto;
+        }
+
+        #filters-container, #table-outer-container {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}  
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Listini / Inserimenti Falliti</li>
+        </ol>
+    </nav>
+
+    <div id="container_listini_falliti">
+        <div id="filters-container">
+            <form method="get" action="{% url 'mainapp:listino' %}" id="filter-form">
+                <div class="form-group form-group-left">
+                    <label for="fornitore"><span style="color: teal; font-size: 16px;">Fornitore</span></label>
+                    <select class="form-select form-select-sm" id="fornitore" name="fornitore">
+                        <option value="">Tutti</option>
+                        {% for forn in fornitori %}
+                            <option value="{{ forn }}" {% if forn == fornitore %}selected{% endif %}>{{ forn }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="magazzino"><span style="color: teal; font-size: 16px;">Magazzino</span></label>
+                    <select class="form-select form-select-sm" id="magazzino" name="magazzino">
+                        <option value="">Tutti</option>
+                        {% for mag in magazzini %}
+                            <option value="{{ mag }}" {% if mag == magazzino %}selected{% endif %}>{{ mag }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="mezzo"><span style="color: teal; font-size: 16px;">Mezzo</span></label>
+                    <select class="form-select form-select-sm" id="mezzo" name="mezzo">
+                        <option value="">Tutti</option>
+                        {% for m in mezzi %}
+                            <option value="{{ m }}" {% if m == mezzo %}selected{% endif %}>{{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="tipo"><span style="color: teal; font-size: 16px;">Tipo</span></label>
+                    <select class="form-select form-select-sm" id="tipo" name="tipo">
+                        <option value="">Tutti</option>
+                        {% for t in tipi %}
+                            <option value="{{ t }}" {% if t == tipo %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="partenza"><span style="color: teal; font-size: 16px;">Partenza</span></label>
+                    <select class="form-select form-select-sm" id="partenza" name="partenza">
+                        <option value="">Tutti</option>
+                        {% for p in partenze %}
+                            <option value="{{ p }}" {% if p == partenza %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="arrivo"><span style="color: teal; font-size: 16px;">Arrivo</span></label>
+                    <select class="form-select form-select-sm" id="arrivo" name="arrivo">
+                        <option value="">Tutti</option>
+                        {% for a in arrivi %}
+                            <option value="{{ a }}" {% if a == arrivo %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="conto_contabile"><span style="color: teal; font-size: 16px;">Conto Contabile</span></label>
+                    <select class="form-select form-select-sm" id="conto_contabile" name="conto_contabile">
+                        <option value="">Tutti</option>
+                        {% for cc in conti_contabili %}
+                            <option value="{{ cc }}" {% if cc == conto_contabile %}selected{% endif %}>{{ cc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="voce_spesa"><span style="color: teal; font-size: 16px;">Voce Spesa</span></label>
+                    <select class="form-select form-select-sm" id="voce_spesa" name="voce_spesa">
+                        <option value="">Tutti</option>
+                        {% for vs in voci_spesa %}
+                            <option value="{{ vs }}" {% if vs == voce_spesa %}selected{% endif %}>{{ vs }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left">
+                    <label for="centro_costo"><span style="color: teal; font-size: 16px;">Centro Costo</span></label>
+                    <select class="form-select form-select-sm" id="centro_costo" name="centro_costo">
+                        <option value="">Tutti</option>
+                        {% for cc in centri_costo %}
+                            <option value="{{ cc }}" {% if cc == centro_costo %}selected{% endif %}>{{ cc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div class="form-group form-group-left" style="margin-top: 5px;">
+                    <button type="button" onclick="window.location.href='{% url 'mainapp:listino' %}'" class="blue-button">Rimuovi Filtri</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="table-outer-container">
+            <div id="table-scroll-container">
+                <div id="table-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover dataTable" id="table-2">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Fornitore</th>
+                                    <th scope="col">Magazzino</th>
+                                    <th scope="col">Mezzo</th>
+                                    <th scope="col">Tipo</th>
+                                    <th scope="col">Partenza</th>
+                                    <th scope="col">Arrivo</th>
+                                    <th scope="col">Costo</th>
+                                    <th scope="col">ContoContabile</th>
+                                    <th scope="col">VoceSpesa</th>
+                                    <th scope="col">CentroCosto</th>
+                                    <th scope="col">DataValidità</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for riga_listino in listini %}
+                                    <tr>
+                                        <td>{{ riga_listino.id }}</td>
+                                        <td>{{riga_listino.fornitore.fornitore_cod_as}}-{{ riga_listino.fornitore.fornitore_nome}}</td>
+                                        <td>{{ riga_listino.magazzino.magazzino_lettera }}</td>
+                                        <td>{{ riga_listino.mezzo.mezzo_nome }}</td>
+                                        <td>{{ riga_listino.tipologia.tipologia_nome }}</td>
+                                        <td>{{ riga_listino.partenza.zona_nome }}</td>
+                                        <td>{{ riga_listino.arrivo.zona_nome }}</td>
+                                        <td>{{ riga_listino.costo }}</td>
+                                        <td>{{ riga_listino.conto_contabile }}</td>
+                                        <td>{{ riga_listino.voce_spesa }}</td>
+                                        <td>{{ riga_listino.centro_costo }}</td>
+                                        <td>{{ riga_listino.data_ultimo_aggiornamento|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pagination">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Prima pag</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Indietro</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Prima pag</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Indietro</span>
+                            </li>
+                        {% endif %}
+            
+                        <li class="page-item active page-counter" aria-current="page">
+                            <span class="page-link teal">
+                                Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
+                                <span class="sr-only">(current)</span>
+                            </span>
+                        </li>
+            
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Avanti</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Ultima pag</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Avanti</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Ultima pag</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('filter-form');
+            const selects = form.querySelectorAll('select');
+
+            selects.forEach(select => {
+                select.addEventListener('change', function() {
+                    if (this.value === "") {
+                        // Se è selezionato "Tutti", rimuovi il parametro dall'URL
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete(this.name);
+                        window.location.href = url.toString();
+                    } else {
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        function confirmDelete(doc_id) {
+            var isConfirmed = confirm("Sei sicuro di voler eliminare questo inserimento fallito?");
+            if (isConfirmed) {
+                document.getElementById("deleteForm_" + doc_id).submit();
+            }
+        }
+
+        function toggleExpand(element) {
+            element.classList.toggle('expanded');
+        }
+    </script>
+{% endblock %}

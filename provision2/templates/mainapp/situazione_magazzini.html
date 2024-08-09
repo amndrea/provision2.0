@@ -106,7 +106,7 @@
                                             <div class="form-group">
                                                 <label for="modalSocieta_{{ magazzino.pk }}">Società:</label>
                                                 <select class="form-control" id="modalSocieta_{{ magazzino.pk }}" name="societa" required>
-                                                    <option value="" disabled>Seleziona una società</option>
+                                                    <option value="">Seleziona una società</option>
                                                     {% for societa in societa_list %}
                                                         <option value="{{ societa.pk }}" {% if societa.pk == magazzino.societa.pk %}selected{% endif %}>
                                                             {{ societa.societa_nome }}
@@ -195,8 +195,8 @@
                         </div>
                         <div class="form-group">
                             <label for="modalSocieta">Società:</label>
-                            <select class="form-control" id="modalSocieta" name="societa" required>
-                                <option value="" selected disabled>Seleziona una società</option>
+                            <select class="form-control" id="modalSocieta" name="societa" multiple required>
+                                <option value="" selected>Seleziona una società</option>
                                 {% for societa in societa_list %}
                                     <option value="{{ societa.pk }}">{{ societa.societa_nome }}</option>
                                 {% endfor %}

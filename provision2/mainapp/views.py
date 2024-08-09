@@ -17,6 +17,8 @@ from django.shortcuts import render
 from django.contrib import messages
 from .models import Fornitore
 from .tools import *
+from django.contrib.auth.decorators import user_passes_test
+from datetime import date
 
 # -------------------------------------------------------------------------------------------------------------- #
 # ---------------------------------- ANAGRAFICA FORNITORI ------------------------------------------------------ #
@@ -141,8 +143,7 @@ def elimina_societa(request, pk):
             societa.delete()
             messages.success(request, 'Società eliminata con successo')
         except ProtectedError:
-            listini_associati = Listino.objects.filter(societa=societa).count()
-            messages.error(request, f'Impossibile eliminare la società. Ci sono {listini_associati} listini associati.')
+            messages.error(request, f'Impossibile eliminare la società di ID {societa.id }. Ci sono altre entità associate.')
     
     return redirect('mainapp:situazione_societa')
 
@@ -189,19 +190,21 @@ def situazione_magazzini(request):
     if request.method == 'POST':
         nome = request.POST.get('magazzino_nome', '').strip().upper()
         lettera = request.POST.get('magazzino_lettera', '').strip().upper()
-        societa_id = request.POST.get('societa')
+        societa_ids = request.POST.getlist('societa')  # Usa getlist invece di get
 
-        if not nome or not lettera or not societa_id:
+        if not nome or not lettera:
             messages.error(request, 'Errore: tutti i campi sono obbligatori')
-        elif societa_id == "":
-            messages.error(request, 'Errore: devi selezionare una società')
+        elif len(lettera) != 1:
+            messages.error(request, 'Errore: La lettera del magazzino deve essere di un solo carattere')
         elif Magazzino.objects.filter(magazzino_lettera=lettera).exists():
             messages.error(request, 'Errore: La lettera del magazzino esiste già')
         else:
             try:
-                societa = Societa.objects.get(pk=societa_id)
-                new_magazzino = Magazzino(magazzino_nome=nome, magazzino_lettera=lettera, societa=societa)
+                new_magazzino = Magazzino(magazzino_nome=nome, magazzino_lettera=lettera)
                 new_magazzino.save()
+                for societa_id in societa_ids:
+                    societa = Societa.objects.get(pk=societa_id)
+                    new_magazzino.societa.add(societa)
                 messages.success(request, 'Magazzino aggiunto con successo')
                 return redirect('mainapp:situazione_magazzini')
             except Societa.DoesNotExist:
@@ -220,31 +223,8 @@ def modifica_magazzino(request, pk):
             messages.error(request, 'Errore: tutti i campi sono obbligatori')
         elif societa_id == "":
             messages.error(request, 'Errore: devi selezionare una società')
-        elif Magazzino.objects.filter(magazzino_lettera=lettera).exclude(pk=pk).exists():
-            messages.error(request, 'Errore: La lettera del magazzino esiste già')
-        else:
-            try:
-                societa = Societa.objects.get(pk=societa_id)
-                magazzino.magazzino_nome = nome
-                magazzino.magazzino_lettera = lettera
-                magazzino.societa = societa
-                magazzino.save()
-                messages.success(request, 'Magazzino modificato con successo')
-            except Societa.DoesNotExist:
-                messages.error(request, 'Errore: Società non valida')
-
-    return redirect('mainapp:situazione_magazzini')
-def modifica_magazzino(request, pk):
-    magazzino = get_object_or_404(Magazzino, pk=pk)
-    if request.method == 'POST':
-        nome = request.POST.get('magazzino_nome', '').strip().upper()
-        lettera = request.POST.get('magazzino_lettera', '').strip().upper()
-        societa_id = request.POST.get('societa')
-
-        if not nome or not lettera or not societa_id:
-            messages.error(request, 'Errore: tutti i campi sono obbligatori')
-        elif societa_id == "":
-            messages.error(request, 'Errore: devi selezionare una società')
+        elif len(lettera) != 1:
+            messages.error(request, 'Errore: Il campo lettera deve contenere esattamente un carattere')
         elif Magazzino.objects.filter(magazzino_lettera=lettera).exclude(pk=pk).exists():
             messages.error(request, 'Errore: La lettera del magazzino esiste già')
         else:
@@ -388,6 +368,9 @@ def elimina_tipologia(request, pk):
         except Exception as e:
             messages.error(request, f'Errore durante l\'eliminazione della tipologia: {str(e)}')
     return redirect('mainapp:situazione_tipologie')
+
+
+
 # -------------------------------------------------------------------------------------------------------------- #
 # --------------------------------- FINE ANAGRAFICA TIPOLOGIE -------------------------------------------------- #
 # -------------------------------------------------------------------------------------------------------------- #
@@ -447,6 +430,70 @@ def elimina_zona(request, pk):
         except Exception as e:
             messages.error(request, f'Errore durante l\'eliminazione della zona: {str(e)}')
     return redirect('mainapp:situazione_zone')
+
+
+class ImportZone(View):
+    template_name = "mainapp/import_entita.html"
+
+    def get(self, request):
+        context = {'entita': 'zone'}
+        return render(request, self.template_name, context=context)
+    def post(self, request):
+        if 'file' not in request.FILES:
+            messages.error(request, 'Nessun file caricato')
+            return redirect('mainapp:import_zone')
+        
+        excel_file = request.FILES['file']
+        print(excel_file)
+        
+        # Leggo il file in memoria
+        try:
+            file_in_memory = io.BytesIO(excel_file.read())
+            
+            # carico il workbook
+            wb = load_workbook(filename=file_in_memory, read_only=True, data_only=True)
+            
+            # primo foglio
+            sheet = wb.active
+
+            # converto il foglio in un DataFrame pandas
+            data = sheet.values
+            columns = next(data)
+            df = pd.DataFrame(data, columns=columns)
+        except Exception as e:
+            print("Errore nel leggere il file")
+            print(f"Errore specifico: {type(e).__name__}, {str(e)}")
+            messages.error(request, f'Errore nel leggere il file Excel: {str(e)}')
+            return redirect('mainapp:import_zone')
+
+        # Verifica che il file abbia tutte le colonne
+        required_columns = ['ZONA' ]
+        if not all(col in df.columns for col in required_columns):
+            messages.error(request, 'Il file non contiene tutte le colonne richieste')
+            return redirect('mainapp:import_zone')
+
+        righe_inserite = 0
+        righe_fallite = 0
+
+        for _,row in df.iterrows():
+            
+            with transaction.atomic():
+                new_zona_nome = row['ZONA'].strip().upper()
+                
+                if check_esistenza_zona(new_zona_nome):
+                    righe_fallite = righe_fallite + 1
+                    print(f'La zona {new_zona_nome} esiste già ')
+                else:
+                    zona = Zona.objects.create(zona_nome=new_zona_nome)
+                    righe_inserite = righe_inserite + 1
+
+        if righe_fallite > 0:
+            messages.warning(request, f'Importazione completata. Inserite: {righe_inserite}, Fallite: {righe_fallite}')
+        else:
+            messages.success(request, f'Importazione completata. Inserite: {righe_inserite}, Fallite: {righe_fallite}')
+
+        return redirect('mainapp:import_zone')             
+             
 # -------------------------------------------------------------------------------------------------------------- #
 # -------------------------------------- FINE ANAGRAFICA ZONE -------------------------------------------------- #
 # -------------------------------------------------------------------------------------------------------------- #
@@ -461,6 +508,7 @@ class CustomJSONEncoder(DjangoJSONEncoder):
             return obj.strftime('%Y-%m-%d %H:%M:%S')
         return super().default(obj)
     
+
 
 class ImportListinoView(View):
     template_name = 'mainapp/import_listino.html'
@@ -491,6 +539,11 @@ class ImportListinoView(View):
             columns = next(data)
             df = pd.DataFrame(data, columns=columns)
 
+            for col in df.columns:
+                if df[col].dtype == 'object':
+                    df[col] = df[col].str.strip().str.upper()
+            df['DATA'] = pd.to_datetime(df['DATA']).dt.strftime('%Y-%m-%d')
+
         except Exception as e:
             print("Errore nel leggere il file")
             print(f"Errore specifico: {type(e).__name__}, {str(e)}")
@@ -500,13 +553,13 @@ class ImportListinoView(View):
         # Verifica che il file abbia tutte le colonne
         required_columns = ['FORNITORE', 'MAGAZZINO', 'MEZZO', 'TIPOLOGIA', 'PARTENZA', 'ARRIVO', 'COSTO', 'DATA', 'CONTOCONTABILE', 'VOCESPESA', 'CENTROCOSTO']
         if not all(col in df.columns for col in required_columns):
-            print("mancano delle colonne nel file")
             messages.error(request, 'Il file non contiene tutte le colonne richieste')
             return redirect('mainapp:import_listino')
         
         righe_inserite = 0
         righe_aggiornate = 0
         righe_fallite = 0
+        righe_uguali = 0
     
         for _, row in df.iterrows():
             try:
@@ -514,43 +567,77 @@ class ImportListinoView(View):
                     # Cerco di ottenere le entità esistenti
                     try:
                         fornitore = Fornitore.objects.get(fornitore_nome=row['FORNITORE'])
-                        magazzino = Magazzino.objects.get(magazzino_nome=row['MAGAZZINO'])
+                        magazzino = Magazzino.objects.get(magazzino_lettera=row['MAGAZZINO'])
                         mezzo = Mezzo.objects.get(mezzo_nome=row['MEZZO'])
                         tipologia = Tipologia.objects.get(tipologia_nome=row['TIPOLOGIA'])
                         partenza = Zona.objects.get(zona_nome=row['PARTENZA'])
                         arrivo = Zona.objects.get(zona_nome=row['ARRIVO'])
                     except ObjectDoesNotExist as e:
-                        # Se una qualsiasi entità non esiste, sollevo un'eccezione
-                        raise ValueError(f"Entità non trovata: {str(e)}")
+                        errore_dettagliato = f"Entità non trovata: {type(e).__name__} - {str(e)}. "
+                        errore_dettagliato += f"Valori riga: FORNITORE={row['FORNITORE']}, "
+                        errore_dettagliato += f"MAGAZZINO={row['MAGAZZINO']}, MEZZO={row['MEZZO']}, "
+                        errore_dettagliato += f"TIPOLOGIA={row['TIPOLOGIA']}, PARTENZA={row['PARTENZA']}, "
+                        errore_dettagliato += f"ARRIVO={row['ARRIVO']}"
+                        raise ValueError(errore_dettagliato)
 
-                    listino, created = Listino.objects.update_or_create(
-                        fornitore=fornitore,
-                        magazzino=magazzino,
-                        mezzo=mezzo,
-                        tipologia=tipologia,
-                        partenza=partenza,
-                        arrivo=arrivo,
-                        defaults={
-                            'costo': row['COSTO'],
-                            'data_ultimo_aggiornamento': row['DATA'],
-                            'conto_contabile': row['CONTOCONTABILE'],
-                            'voce_spesa': row['VOCESPESA'],
-                            'centro_costo': row['CENTROCOSTO']
-                        }
-                    )
-                    
-                    if created:
-                        righe_inserite += 1
+                    data_della_riga = row['DATA']
+                    if isinstance(data_della_riga, str):
+                        data_della_riga = date.fromisoformat(data_della_riga)
+                    elif isinstance(data_della_riga, (datetime, pd.Timestamp)):
+                        data_della_riga = data_della_riga.date()
                     else:
-                        righe_aggiornate += 1
+                        raise ValueError(f"Formato data non valido: {data_della_riga}")
 
+                    try:
+                        riga_listino = Listino.objects.get(
+                            fornitore=fornitore,
+                            magazzino=magazzino,
+                            mezzo=mezzo,
+                            tipologia=tipologia,
+                            partenza=partenza,
+                            arrivo=arrivo
+                        )
+
+                        if riga_listino.data_ultimo_aggiornamento == data_della_riga:
+                            print(f'Oggetto id={riga_listino.id} ha la data uguale. data oggetto = {riga_listino.data_ultimo_aggiornamento}, data riga ={data_della_riga} ')
+                            righe_uguali += 1 
+                            continue
+                        else:
+                            print(f"due date diverse. Data oggetto {riga_listino.data_ultimo_aggiornamento}, data riga{data_della_riga} ")
+                            riga_listino.costo = row['COSTO']
+                            riga_listino.data_ultimo_aggiornamento = data_della_riga
+                            riga_listino.conto_contabile = row['CONTOCONTABILE']
+                            riga_listino.voce_spesa =  row['VOCESPESA']
+                            riga_listino.centro_costo = row['CENTROCOSTO']
+                            riga_listino.save()
+                            righe_aggiornate += 1
+                    except Listino.DoesNotExist:
+                        Listino.objects.create(
+                            fornitore=fornitore,
+                            magazzino=magazzino,
+                            mezzo=mezzo,
+                            tipologia=tipologia,
+                            partenza=partenza,
+                            arrivo=arrivo,
+                            data_ultimo_aggiornamento=data_della_riga,
+                            costo=row['COSTO'],
+                            conto_contabile=row['CONTOCONTABILE'],
+                            voce_spesa=row['VOCESPESA'],
+                            centro_costo=row['CENTROCOSTO'])
+                        righe_inserite += 1 
             except Exception as e:
                 righe_fallite += 1
                 dati_riga = row.to_dict()
 
                 # Converto esplicitamente la colonna 'DATA' in stringa
-                if 'DATA' in dati_riga and isinstance(dati_riga['DATA'], pd.Timestamp):
-                    dati_riga['DATA'] = dati_riga['DATA'].strftime('%Y-%m-%d %H:%M:%S')
+                if 'DATA' in dati_riga:
+                    if isinstance(dati_riga['DATA'], (pd.Timestamp, datetime.date)):
+                        dati_riga['DATA'] = dati_riga['DATA'].strftime('%Y-%m-%d')
+                    elif isinstance(dati_riga['DATA'], str):
+                        # Già una stringa, non fare nulla
+                        pass
+                    else:
+                        dati_riga['DATA'] = str(dati_riga['DATA'])  # Converti in stringa come fallback
                 
                 try:
                     with transaction.atomic():
@@ -558,19 +645,72 @@ class ImportListinoView(View):
                             dati_riga=json.dumps(dati_riga, cls=CustomJSONEncoder),
                             errore=str(e)
                         )
-                    print(f"Inserimento fallito creato: {dati_riga}")
+                    print("Inserimento fallito creato")
                 except Exception as inner_e:
                     print(f"Errore durante la creazione di InserimentoFallito: {str(inner_e)}")
 
         if righe_fallite > 0:
              messages.warning(request, f'Importazione completata. Inserite: {righe_inserite}, '
-                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}')
+                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}, Gia presenti: {righe_uguali}')
         else:    
             messages.success(request, f'Importazione completata. Inserite: {righe_inserite}, '
-                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}')
+                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}, Gia presenti: {righe_uguali}')
         return redirect('mainapp:import_listino')
+    
+
+class ListinoListView(ListView):
+    model = Listino
+    paginate_by = 40
+    template_name = "mainapp/listini.html"
+    context_object_name = "listini"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        filters = {}
+        
+        filter_mappings = {
+            'fornitore': 'fornitore__fornitore_nome',
+            'magazzino': 'magazzino__magazzino_lettera',
+            'mezzo': 'mezzo__mezzo_nome__icontains',
+            'tipo': 'tipologia__tipologia_nome',
+            'partenza': 'partenza__zona_nome__icontains',
+            'arrivo': 'arrivo__zona_nome__icontains',
+            'conto_contabile': 'conto_contabile__icontains',
+            'voce_spesa': 'voce_spesa__icontains',
+            'centro_costo': 'centro_costo__icontains',
+        }
+
+        for param, filter_name in filter_mappings.items():
+            value = self.request.GET.get(param)
+            if value:
+                filters[filter_name] = value
+
+        return queryset.filter(**filters).order_by('fornitore', 'magazzino')
 
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Aggiungi i valori selezionati al contesto
+        filter_fields = [
+            'fornitore', 'magazzino', 'mezzo', 'tipo', 'partenza', 
+            'arrivo', 'conto_contabile', 'voce_spesa', 'centro_costo'
+        ]
+        for field in filter_fields:
+            context[field] = self.request.GET.get(field, '')
+
+        # Aggiungi le opzioni per i dropdown
+        context['fornitori'] = Fornitore.objects.values_list('fornitore_nome', flat=True).distinct()
+        context['magazzini'] = Magazzino.objects.values_list('magazzino_lettera', flat=True).distinct()
+        context['mezzi'] = Mezzo.objects.values_list('mezzo_nome', flat=True).distinct()
+        context['tipi'] = Tipologia.objects.values_list('tipologia_nome', flat=True).distinct()
+        context['partenze'] = Zona.objects.values_list('zona_nome', flat=True).distinct()
+        context['arrivi'] = Zona.objects.values_list('zona_nome', flat=True).distinct()
+        context['conti_contabili'] = Listino.objects.values_list('conto_contabile', flat=True).distinct()
+        context['voci_spesa'] = Listino.objects.values_list('voce_spesa', flat=True).distinct()
+        context['centri_costo'] = Listino.objects.values_list('centro_costo', flat=True).distinct()
+
+        return context
 
 # -------------------------------------------------------------------------------------------------------------- #
 # ---------------------------- Gestione righe fallite  -------------------------- #
@@ -580,6 +720,7 @@ class InserimentoFallitoListView(ListView):
     paginate_by = 20
     template_name = "mainapp/listino_falliti.html"
     context_object_name = "lista_falliti"
+    
 
     def get_queryset(self):
         queryset = super().get_queryset()

@@ -1,4 +1,4 @@
-# TODO Maschere per le anagrafiche#       
+     
 
 # TODO Visualizzazione listini
 
@@ -33,3 +33,8 @@
 
 # TODO Caricamento di anagrafica da file excel, se ci sono tutti i campi e la data è la stessa allora lascia perdere
 #       Se la data è diversa fa un aggiornamento
+
+
+                                        <td class="expandable-cell">
+                                            <span class="expand-arrow" onclick="toggleExpand(this.parentNode)" title="Espandi/Comprimi"></span>
+                                        </td>

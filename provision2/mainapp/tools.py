@@ -1,4 +1,5 @@
-# FILE ALL'INTERNO DEL QUALE SONO DEFINITE LE FUNZIONI UTILI AL FUNZIONAMENTO DELL'APPLICAZIONE
+# FILE ALL'INTERNO DEL QUALE SONO DEFINITE LE FUNZIONI 
+# UTILI AL FUNZIONAMENTO DELL'APPLICAZIONE
 
 from .models import *
 
@@ -13,3 +14,16 @@ def check_esistenza_fornitore_as(cod_as):
 
 def check_esistenza_societa(nome):
     return Societa.objects.filter(societa_nome=nome).exists()
+
+def check_esistenza_zona(nome):
+    return Zona.objects.filter(zona_nome=nome).exists()
+
+def check_esistenza_riga_listino(fornitore, magazzino, mezzo, tipologia, partenza, arrivo):
+    return Listino.objects.filter(
+        fornitore=fornitore,
+        magazzino=magazzino,
+        mezzo=mezzo,
+        tipologia=tipologia,
+        partenza=partenza,
+        arrivo=arrivo
+    )

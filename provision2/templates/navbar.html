@@ -76,17 +76,32 @@
 
             </li>
 
-            
-            <!-- CONTROLLO SULL'UTENTE SUPERUSER-->
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
-                    Utenti
+                    Import Listini
                 </a>
+
+                <!--  CONTROLLO SULL'UTENTE SUPERUSER O SUL GRUPPO DELL'UTENTE AMMINISTRATIVO -->
                 <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#">Crea nuovo utente</a>
-                    <a class="dropdown-item" href="#">Visualizza Utenti</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:listino' %}">Visualizza Listino</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:import_listino' %}">Importa Listino</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:listino_falliti' %}">Visualizza Import Falliti</a>
                 </div>
             </li>
+
+
+            {% if user.is_superuser %}
+                <!-- CONTROLLO SULL'UTENTE SUPERUSER-->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
+                        Utenti
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#">Crea nuovo utente</a>
+                        <a class="dropdown-item" href="#">Visualizza Utenti</a>
+                    </div>
+                </li>
+            {% endif %}
 
             <li class="nav-item guide-link">
                 <a class="nav-link" style="background-color: coral;" role="button" onclick="confirmLogout()" aria-expanded="false">

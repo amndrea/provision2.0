@@ -20,18 +20,17 @@
 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item active" aria-current="page">Caricamento Listino</li>
+            <li class="breadcrumb-item"><a href="{% url 'mainapp:situazione_zone' %}">Zone</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Caricamento Zone da file</li>
         </ol>
     </nav>
 
 
     <div class="main_div">
-        <h3> <span style="color: teal;"> Seleziona il file per l'import dei dati</span></h3>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="file" name="file" accept=".xlsx">
-            <br>
-            <button type="submit" class="blue-button">Importa</button>
+            <input type="file" name="file" accept=".xlsx, .xls">
+            <button type="submit">Importa</button>
         </form>
     </div>
 {% endblock %}

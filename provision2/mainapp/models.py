@@ -1,4 +1,5 @@
 from django.db import models
+import datetime
 
 # Create your models here.
 
@@ -20,7 +21,7 @@ class Magazzino(models.Model):
     magazzino_nome = models.CharField(max_length=128, blank=False, null=False)
     magazzino_lettera = models.CharField(max_length=1, blank=False, null=False, unique=True)
     # per separare i magazzini sui quali gli utenti sono abilitati 
-    societa = models.ForeignKey(Societa, on_delete=models.PROTECT)
+    societa = models.ManyToManyField(Societa)
 # -------------------------------------------------------------------------------------------- #
 
 
@@ -60,13 +61,14 @@ class Listino(models.Model):
     arrivo = models.ForeignKey(Zona, related_name="arrivo", on_delete=models.PROTECT)
 
     # data utilizzata per la validità 
-    data_ultimo_aggiornamento = models.DateField
+    data_ultimo_aggiornamento = models.DateField(default=datetime.date(1997, 12, 23))
     costo = models.FloatField(default=0.0)
 
     # Anche questi vanno tabellati
     conto_contabile = models.CharField(max_length=25, default = '-')
     voce_spesa = models.CharField(max_length=10, blank=False, null=False)
     centro_costo = models.CharField(max_length=10, blank=False, null=False)
+    data_upload = models.DateField(auto_now_add=True)
 
     class Meta:
         unique_together = ('fornitore', 'magazzino', 'mezzo', 'tipologia', 'partenza', 'arrivo')
