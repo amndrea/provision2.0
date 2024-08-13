@@ -1,5 +1,6 @@
 from django.db import models
 import datetime
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -87,10 +88,23 @@ class InserimentoFallito(models.Model):
 # -------------------------------------------------------------------------------------------- #
 #class Fattura(models.Model):
 # -------------------------------------------------------------------------------------------- #
-class Fattura(models.Model):
+# FORNITORE lo potrei ricavare dalle righe del listino, ma per questione di ottimizzazione lo metto qua
+class Prefattura(models.Model):
     fattura_numero = models.IntegerField()
     fattura_data = models.DateField()
+    fattura_documento = models.FileField(upload_to='documenti/')
+
+    fattura_fornitore = models.ForeignKey(Fornitore, on_delete=models.PROTECT)
+    fattura_utente = models.ForeignKey(User, on_delete=models.PROTECT)
+
+    data_modifica = models.DateField(auto_now=True)
     # Nella fattura sono group_by (Centro Costo, Voce Spesa, Conto Contabile iniseme, queste fanno un unica riga della fattura)
     # magazzino
     # importo => somma di tutti gli importi del documento
 
+
+
+class PrefatturaRighe(models.Model):
+    prefattura = models.ForeignKey(Prefattura, on_delete=models.PROTECT)
+    riga_listino = models.ForeignKey(Listino, on_delete=models.PROTECT)
+    quantita = models.IntegerField()

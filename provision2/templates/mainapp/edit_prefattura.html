@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+    <style>
+
+        #container_prefattura {
+            width: 100%;
+            margin: auto; 
+            display: flex;
+            flex-wrap: wrap;
+            padding-left: 20px;  
+            padding-right: 20px; 
+        }
+        .search-container {
+            width: 20%;
+            padding-right: 20px;
+        }
+        .table-container {
+            width: 80%;
+        }
+        .scrollable-table {
+            max-height: 200px;  /* Puoi modificare questo valore secondo le tue esigenze */
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .scrollable-table table {
+            width: 100%;
+        }
+        .scrollable-table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;  
+            z-index: 1;
+        }
+        .table-container table thead th,
+        .table-container table tbody td {
+            font-size: 12px !important;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'mainapp:situazione_prefatture' %}">Prefatture</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Modifica Prefattura {{ prefattura.fattura_numero }}</li>
+        </ol>
+    </nav>
+
+    <div id="container_prefattura">
+        <div class="search-container">
+            <h5 style="color: teal;">Filtri</h5>
+            <form id="filtroForm">
+                <div class="form-group">
+                    <label for="magazzino">Magazzino:</label>
+                    <select class="form-control" id="magazzino" name="magazzino">
+                        <option value="">Tutti i magazzini</option>
+                        {% for id, lettera in magazzini %}
+                            <option value="{{ lettera }}">{{ lettera }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="mezzo">Mezzo:</label>
+                    <select class="form-control" id="mezzo" name="mezzo">
+                        <option value="">Tutti i mezzi</option>
+                        {% for id, nome in mezzi %}
+                            <option value="{{ nome }}">{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tipologia">Tipologia:</label>
+                    <select class="form-control" id="tipologia" name="tipologia">
+                        <option value="">Tutte le tipologie</option>
+                        {% for id, nome in tipologie %}
+                            <option value="{{ nome }}">{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="partenza">Partenza:</label>
+                    <select class="form-control" id="partenza" name="partenza">
+                        <option value="">Tutte le partenze</option>
+                        {% for id, nome in partenze %}
+                            <option value="{{ nome }}">{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="arrivo">Arrivo:</label>
+                    <select class="form-control" id="arrivo" name="arrivo">
+                        <option value="">Tutti gli arrivi</option>
+                        {% for id, nome in arrivi %}
+                            <option value="{{ nome }}">{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" style="background-color: #FFB90F; color:white; margin-top: 5px;" id="rimuoviFiltri">Rimuovi Filtri</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <h4 style="color: teal;">Righe Prefattura</h4>
+            <div class="scrollable-table">
+                <table class="table table-hover dataTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">Magazzino</th>
+                            <th scope="col">Mezzo</th>
+                            <th scope="col">Tipologia</th>
+                            <th scope="col">Partenza</th>
+                            <th scope="col">Arrivo</th>
+                            <th scope="col">Costo</th>
+                            <th scope="col">Quantità</th>
+                            <th scope="col">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for riga in righe_prefattura %}
+                        <tr>
+                            <td>{{ riga.riga_listino.magazzino.magazzino_nome }}</td>
+                            <td>{{ riga.riga_listino.mezzo.mezzo_nome }}</td>
+                            <td>{{ riga.riga_listino.tipologia.tipologia_nome }}</td>
+                            <td>{{ riga.riga_listino.partenza.zona_nome }}</td>
+                            <td>{{ riga.riga_listino.arrivo.zona_nome }}</td>
+                            <td>{{ riga.riga_listino.costo }}</td>
+                            <td>{{ riga.quantita }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form id="deleteForm_{{ riga.id }}" method="post" action="{% url 'mainapp:elimina_riga_prefattura' riga.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="button" class="personal-button" title="Elimina" onclick="confirmDelete({{ riga.id }})">
+                                            <img src="{% static 'img/cestino.png' %}" width="24px" height="24">
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <h4 style="color: teal;">Righe Listino Disponibili</h4>
+            <div class="scrollable-table">
+                <table class="table table-hover dataTable" id="righeListinoTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">Magazzino</th>
+                            <th scope="col">Mezzo</th>
+                            <th scope="col">Tipologia</th>
+                            <th scope="col">Partenza</th>
+                            <th scope="col">Arrivo</th>
+                            <th scope="col">Costo</th>
+                            <th scope="col">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Righe di listino filtrate verranno inserite qui dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal per aggiungere una riga -->
+    <div class="modal fade" id="addRigaModal" tabindex="-1" role="dialog" aria-labelledby="addRigaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: teal">
+                    <h5 class="modal-title" id="addRigaModalLabel" style="color: white">Aggiungi Riga</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addRigaForm" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" id="listino_id" name="listino_id">
+                        <div class="form-group">
+                            <label for="quantita">Quantità:</label>
+                            <input type="number" class="form-control" id="quantita" name="quantita" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                            <button type="submit" class="btn btn-primary">Aggiungi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Funzione per aggiornare la tabella delle righe di listino
+            function updateRigheListino() {
+                $.ajax({
+                    url: '{% url "mainapp:filter_righe_listino" prefattura.pk %}',
+                    data: $('#filtroForm').serialize(),
+                    dataType: 'json',
+                    success: function(data) {
+                        var tbody = $('#righeListinoTable tbody');
+                        tbody.empty();
+                        if (data.length === 0) {
+                            tbody.append('<tr><td colspan="7" class="text-center">Nessuna riga di listino disponibile</td></tr>');
+                        } else {
+                            $.each(data, function(i, item) {
+                                tbody.append(
+                                    '<tr>' +
+                                    '<td>' + item.magazzino + '</td>' +
+                                    '<td>' + item.mezzo + '</td>' +
+                                    '<td>' + item.tipologia + '</td>' +
+                                    '<td>' + item.partenza + '</td>' +
+                                    '<td>' + item.arrivo + '</td>' +
+                                    '<td>' + item.costo + '</td>' +
+                                    '<td>' +
+                                        '<button type="button" class="personal-button add-riga" title="Aggiungi" data-id="' + item.id + '">' +
+                                        '<img src="{% static "img/aggiungi.png" %}" width="24px" height="24">' +
+                                        '</button>' +
+                                    '</td>' +
+                                    '</tr>'
+                                );
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Errore nella richiesta AJAX:", status, error);
+                        $('#righeListinoTable tbody').html('<tr><td colspan="7" class="text-center">Errore nel caricamento delle righe di listino</td></tr>');
+                    }
+                });
+            }
+        
+            // Applica i filtri quando cambia il valore di qualsiasi select nel form
+            $('#filtroForm select').change(function() {
+                updateRigheListino();
+            });
+        
+            // Event listener per il pulsante "Rimuovi Filtri"
+            $('#rimuoviFiltri').click(function(e) {
+                e.preventDefault();
+                $('#filtroForm')[0].reset();
+                updateRigheListino();
+            });
+        
+            // Carica le righe iniziali al caricamento della pagina
+            updateRigheListino();
+        
+            // Event listener per il pulsante "Aggiungi" su ogni riga di listino
+            $(document).on('click', '.add-riga', function() {
+                var id = $(this).data('id');
+                $('#listino_id').val(id);
+                $('#addRigaModal').modal('show');
+            });
+        
+            // Gestione del submit del form per aggiungere una nuova riga
+            $('#addRigaForm').submit(function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '{% url "mainapp:edit_prefattura" prefattura.pk %}',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $('#addRigaModal').modal('hide');
+                        location.reload();  // Ricarica la pagina per mostrare la nuova riga
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Errore nell'aggiunta della riga:", status, error);
+                        alert("Si è verificato un errore nell'aggiunta della riga. Riprova.");
+                    }
+                });
+            });
+        
+            // Funzione per confermare l'eliminazione di una riga
+            window.confirmDelete = function(id) {
+                var isConfirmed = confirm("Sei sicuro di voler eliminare questa riga dalla prefattura?");
+                if (isConfirmed) {
+                    document.getElementById("deleteForm_" + id).submit();
+                }
+            };
+        
+            // Validazione del form
+            $('#addRigaForm').validate({
+                rules: {
+                    quantita: {
+                        required: true,
+                        number: true,
+                        min: 1
+                    }
+                },
+                messages: {
+                    quantita: {
+                        required: "Inserisci una quantità",
+                        number: "Inserisci un numero valido",
+                        min: "La quantità deve essere maggiore di zero"
+                    }
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        
+            // Reset del form modale quando viene chiuso
+            $('#addRigaModal').on('hidden.bs.modal', function () {
+                $('#addRigaForm')[0].reset();
+                $('#addRigaForm').validate().resetForm();
+            });
+        });
+        </script>
+{% endblock %}
+

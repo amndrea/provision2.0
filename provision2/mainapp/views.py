@@ -15,10 +15,11 @@ import json
 import io
 from django.shortcuts import render
 from django.contrib import messages
-from .models import Fornitore
 from .tools import *
 from django.contrib.auth.decorators import user_passes_test
 from datetime import date
+from django.http import JsonResponse
+
 
 # -------------------------------------------------------------------------------------------------------------- #
 # ---------------------------------- ANAGRAFICA FORNITORI ------------------------------------------------------ #
@@ -755,3 +756,138 @@ class DeleteAllInserimentiFallitiView(View):
         InserimentoFallito.objects.all().delete()
         messages.success(request, "Tutti gli inserimenti falliti sono stati cancellati con successo.")
         return redirect(reverse('mainapp:listino_falliti'))
+
+
+
+def situazione_prefatture(request):
+    # Inizializza il queryset con tutte le prefatture
+    prefatture = Prefattura.objects.all().order_by('-fattura_data')
+    
+    # Applica i filtri
+    numero_fattura = request.GET.get('numero_fattura')
+    fornitore_id = request.GET.get('fornitore')
+    data = request.GET.get('data')
+    
+    if numero_fattura:
+        prefatture = prefatture.filter(fattura_numero=numero_fattura)
+    if fornitore_id:
+        prefatture = prefatture.filter(fattura_fornitore_id=fornitore_id)
+    if data:
+        prefatture = prefatture.filter(fattura_data=data)
+    
+    # Paginazione
+    paginator = Paginator(prefatture, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    fornitori_list = Fornitore.objects.all().order_by('fornitore_nome')
+    
+    context = {
+        'page_obj': page_obj,
+        'fornitori_list': fornitori_list,
+        'numero_fattura': numero_fattura,
+        'fornitore_id': fornitore_id,
+        'data': data,
+    }
+    
+    return render(request, 'mainapp/situazione_prefatture.html', context)
+
+def aggiungi_prefattura(request):
+    if request.method == 'POST':
+        numero = request.POST.get('fattura_numero')
+        fornitore_id = request.POST.get('fattura_fornitore')
+        data = request.POST.get('fattura_data')
+
+        if numero == "" or numero is None:
+            messages.error(request, "Errore: Il numero fattura è obbligatorio")
+            return redirect('mainapp:situazione_prefatture')
+        if data == "" or data is None:
+            messages.error(request, "Errore: La data fattura è obbligatoria")
+            return redirect('mainapp:situazione_prefatture')
+        try:
+            fornitore = Fornitore.objects.get(pk=fornitore_id)
+            Prefattura.objects.create(
+                fattura_numero=numero,
+                fattura_fornitore=fornitore,
+                fattura_data=data,
+                fattura_utente=request.user
+            )
+            messages.success(request, 'Prefattura aggiunta con successo.')
+        except Exception as e:
+            messages.error(request, f'Errore nell\'aggiunta della prefattura: {str(e)}')
+
+    return redirect('mainapp:situazione_prefatture')
+
+def elimina_prefattura(request, pk):
+    pass
+
+
+def filter_righe_listino(request, pk):
+    prefattura = get_object_or_404(Prefattura, pk=pk)
+    righe_listino = Listino.objects.filter(fornitore=prefattura.fattura_fornitore)
+
+    magazzino = request.GET.get('magazzino')
+    mezzo = request.GET.get('mezzo')
+    tipologia = request.GET.get('tipologia')
+    partenza = request.GET.get('partenza')
+    arrivo = request.GET.get('arrivo')
+
+    if magazzino:
+        righe_listino = righe_listino.filter(magazzino__magazzino_nome=magazzino)
+    if mezzo:
+        righe_listino = righe_listino.filter(mezzo__mezzo_nome=mezzo)
+    if tipologia:
+        righe_listino = righe_listino.filter(tipologia__tipologia_nome=tipologia)
+    if partenza:
+        righe_listino = righe_listino.filter(partenza__zona_nome=partenza)
+    if arrivo:
+        righe_listino = righe_listino.filter(arrivo__zona_nome=arrivo)
+
+    data = []
+    for riga in righe_listino:
+        data.append({
+            'id': riga.id,
+            'magazzino': riga.magazzino.magazzino_lettera,
+            'mezzo': riga.mezzo.mezzo_nome,
+            'tipologia': riga.tipologia.tipologia_nome,
+            'partenza': riga.partenza.zona_nome,
+            'arrivo': riga.arrivo.zona_nome,
+            'costo': riga.costo,
+        })
+
+    return JsonResponse(data, safe=False)
+
+def edit_prefattura(request, pk):
+    prefattura = get_object_or_404(Prefattura, pk=pk)
+    righe_prefattura = PrefatturaRighe.objects.filter(prefattura=prefattura)
+
+    magazzini = Magazzino.objects.values_list('id', 'magazzino_nome')
+    mezzi = Mezzo.objects.values_list('id', 'mezzo_nome')
+    tipologie = Tipologia.objects.values_list('id', 'tipologia_nome')
+    partenze = Zona.objects.values_list('id', 'zona_nome')
+    arrivi = Zona.objects.values_list('id', 'zona_nome')
+
+    context = {
+        'prefattura': prefattura,
+        'righe_prefattura': righe_prefattura,
+        'magazzini': magazzini,
+        'mezzi': mezzi,
+        'tipologie': tipologie,
+        'partenze': partenze,
+        'arrivi': arrivi,
+    }
+
+    if request.method == 'POST':
+        listino_id = request.POST.get('listino_id')
+        quantita = request.POST.get('quantita')
+
+        if listino_id and quantita:
+            listino = get_object_or_404(Listino, id=listino_id)
+            PrefatturaRighe.objects.create(prefattura=prefattura, riga_listino=listino, quantita=quantita)
+            return redirect('mainapp:edit_prefattura', pk=pk)
+
+    return render(request, "mainapp/edit_prefattura.html", context)
+
+def elimina_riga_prefattura(request, pk):
+    pass
+

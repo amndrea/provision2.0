@@ -78,17 +78,28 @@
 
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
-                    Import Listini
+                    Listini
                 </a>
 
                 <!--  CONTROLLO SULL'UTENTE SUPERUSER O SUL GRUPPO DELL'UTENTE AMMINISTRATIVO -->
                 <div class="dropdown-menu">
-                    <a class="dropdown-item" href="{% url 'mainapp:listino' %}">Visualizza Listino</a>
                     <a class="dropdown-item" href="{% url 'mainapp:import_listino' %}">Importa Listino</a>
+                    <a class="dropdown-item" href="{% url 'mainapp:listino' %}">Visualizza Listino</a>
                     <a class="dropdown-item" href="{% url 'mainapp:listino_falliti' %}">Visualizza Import Falliti</a>
                 </div>
             </li>
 
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
+                    Prefatture
+                </a>
+
+                <!--  CONTROLLO SULL'UTENTE SUPERUSER O SUL GRUPPO DELL'UTENTE AMMINISTRATIVO -->
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'mainapp:situazione_prefatture' %}">Crea prefatture</a>
+                    <a class="dropdown-item" href="#">Visualizza prefatture</a>
+                </div>
+            </li>
 
             {% if user.is_superuser %}
                 <!-- CONTROLLO SULL'UTENTE SUPERUSER-->

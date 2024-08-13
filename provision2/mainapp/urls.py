@@ -44,5 +44,14 @@ urlpatterns = [
     # URL con il quale eliminare tutte le righe fallite dal caricamento massivo di un listino falliti
     path('delete-all-inserimenti-falliti/', DeleteAllInserimentiFallitiView.as_view(), name='delete_all_inserimenti_falliti'),
 
+
+
+    path('situazione_prefatture/',situazione_prefatture, name="situazione_prefatture"),
+    path('aggiungi_prefattura/', aggiungi_prefattura, name='aggiungi_prefattura'),
+    path('elimina_prefattura/<int:pk>/',elimina_prefattura, name="elimina_prefattura"),
+    path('edit_prefattura/<int:pk>/', edit_prefattura, name='edit_prefattura'),
+    path('filter_righe_listino/<int:pk>/', filter_righe_listino, name='filter_righe_listino'),
+    path('elimina_riga_prefattura/<int:pk>/',elimina_riga_prefattura, name="elimina_riga_prefattura"),
+
 ]
 

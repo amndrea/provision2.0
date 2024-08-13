@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+<style>
+    #container_prefatture {
+        width: 100%;
+        margin: auto; 
+        display: flex;
+        flex-wrap: wrap;
+        padding-left: 20px;  
+        padding-right: 20px; 
+    }
+    .search-container {
+        width: 20%;
+        padding-right: 20px;
+    }
+    .table-container {
+        width: 80%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Prefatture</li>
+        </ol>
+    </nav>
+
+    <div id="container_prefatture">
+        <div class="search-container">
+            <h4>Filtri</h4>
+            <form id="filter-form" method="get">
+                <div class="form-group">
+                    <label for="numero_fattura">Numero Fattura:</label>
+                    <input type="number" class="form-control" id="numero_fattura" name="numero_fattura" value="{{ numero_fattura }}">
+                </div>
+                <div class="form-group">
+                    <label for="fornitore">Fornitore:</label>
+                    <select class="form-control" id="fornitore" name="fornitore">
+                        <option value="">Tutti i fornitori</option>
+                        {% for fornitore in fornitori_list %}
+                            <option value="{{ fornitore.pk }}" {% if fornitore.pk|stringformat:"s" == fornitore_id %}selected{% endif %}>
+                                {{ fornitore.fornitore_nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="data">Data:</label>
+                    <input type="date" class="form-control" id="data" name="data" value="{{ data }}">
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 5px;">Applica Filtri</button>
+                <a href="{% url 'mainapp:situazione_prefatture' %}" class="btn btn-secondary" style="background-color: #FFB90F; color: white; margin-top: 5px;">Rimuovi Filtri</a>
+            </form>
+            <div style="margin-top: 20px;">
+                <button type="button" class="blue-button" data-toggle="modal" data-target="#addPrefatturaModal">
+                    Aggiungi Prefattura
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table table-hover dataTable">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">N°</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Fornitore</th>
+                        <th scope="col">Documento</th>
+                        <th scope="col">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prefattura in page_obj %}
+                        <tr>
+                            <th scope="row">{{ forloop.counter|add:page_obj.start_index|add:-1 }}</th>
+                            <td>{{ prefattura.fattura_numero }}</td>
+                            <td>{{ prefattura.fattura_data|date:"Y-m-d" }}</td>
+                            <td>{{ prefattura.fattura_fornitore.fornitore_nome }}</td>
+                            <td>
+                                {% if prefattura.fattura_documento %}
+                                    <a href="{{ prefattura.fattura_documento.url }}" target="_blank">Visualizza</a>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_prefattura' prefattura.pk %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="button" class="personal-button" title="Elimina" onclick="confirmDelete({{ forloop.counter }})">
+                                            <img src="{% static 'img/cestino.png' %}" width="24px" height="24">
+                                        </button>
+                                    </form>
+                                    <a href="{% url 'mainapp:edit_prefattura' prefattura.pk %}" class="personal-button" title="Modifica">
+                                        <img src="{% static 'img/modifica.png' %}" width="24px" height="24">
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page=1{% if numero_fattura %}&numero_fattura={{ numero_fattura }}{% endif %}{% if fornitore_id %}&fornitore={{ fornitore_id }}{% endif %}{% if data %}&data={{ data }}{% endif %}">Prima</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page={{ page_obj.previous_page_number }}{% if numero_fattura %}&numero_fattura={{ numero_fattura }}{% endif %}{% if fornitore_id %}&fornitore={{ fornitore_id }}{% endif %}{% if data %}&data={{ data }}{% endif %}">Precedente</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Prima</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Precedente</span>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active page-counter">
+                        <span class="page-link teal">
+                            Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page={{ page_obj.next_page_number }}{% if numero_fattura %}&numero_fattura={{ numero_fattura }}{% endif %}{% if fornitore_id %}&fornitore={{ fornitore_id }}{% endif %}{% if data %}&data={{ data }}{% endif %}">Successiva</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link teal" href="?page={{ page_obj.paginator.num_pages }}{% if numero_fattura %}&numero_fattura={{ numero_fattura }}{% endif %}{% if fornitore_id %}&fornitore={{ fornitore_id }}{% endif %}{% if data %}&data={{ data }}{% endif %}">Ultima</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Successiva</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link teal">Ultima</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addPrefatturaModal" tabindex="-1" aria-labelledby="addPrefatturaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: teal">
+                    <h5 class="modal-title" id="addPrefatturaModalLabel" style="color: white">Aggiungi Prefattura</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPrefatturaForm" method="POST" action="{% url 'mainapp:aggiungi_prefattura' %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="fattura_numero">Numero Fattura:</label>
+                            <input type="number" class="form-control" id="fattura_numero" name="fattura_numero" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fattura_fornitore">Fornitore:</label>
+                            <select class="form-control" id="fattura_fornitore" name="fattura_fornitore" required>
+                                <option value="">Seleziona un fornitore</option>
+                                {% for fornitore in fornitori_list %}
+                                    <option value="{{ fornitore.pk }}">{{ fornitore.fornitore_nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fattura_data">Data:</label>
+                            <input type="date" class="form-control" id="fattura_data" name="fattura_data" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                            <button type="submit" class="btn btn-primary">Salva</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(id) {
+            var isConfirmed = confirm("Sei sicuro di voler eliminare questa prefattura?");
+            if (isConfirmed) {
+                document.getElementById("deleteForm_" + id).submit();
+            }
+        }
+    </script>
+{% endblock %}

@@ -38,3 +38,21 @@
                                         <td class="expandable-cell">
                                             <span class="expand-arrow" onclick="toggleExpand(this.parentNode)" title="Espandi/Comprimi"></span>
                                         </td>
+
+
+import con errori, creo gli errori su un file excel con i dati della riga = al template dei listini, e info sull'errore
+
+id nascosto, solo mag, fornitore spezzato in due colonne
+
+aggiungere toast inserimento avvenuto con successo o fallito nelle righe prefattura 
+
+dividere lo storico (gia stampate) da quelle ancora non stampate 
+
+in testata prefattura cod fornitore e nome fornitore
+
+tabella post scrittura 
+num fattura codicefornitore centro di costo vocespesa contocontabile qta  prezzo totale data di creazione 
+
+
+trattino lo rifiuto e anche costo 0 lo rifiuto
+
