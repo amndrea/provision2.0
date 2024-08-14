@@ -6,7 +6,7 @@ from django.db import transaction, IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
 from django.urls import reverse
-from django.db.models import Q, ProtectedError
+from django.db.models import Q, ProtectedError,Subquery, OuterRef
 from django.core.paginator import Paginator
 from .models import Fornitore, Magazzino, Mezzo, Tipologia, Zona, Listino, InserimentoFallito
 from openpyxl import load_workbook
@@ -19,6 +19,7 @@ from .tools import *
 from django.contrib.auth.decorators import user_passes_test
 from datetime import date
 from django.http import JsonResponse
+
 
 
 # -------------------------------------------------------------------------------------------------------------- #
@@ -819,8 +820,17 @@ def aggiungi_prefattura(request):
     return redirect('mainapp:situazione_prefatture')
 
 def elimina_prefattura(request, pk):
-    pass
+    prefattura = Prefattura.objects.get(pk=pk)
+    numero_prefattura = prefattura.fattura_numero
+    righe_prefattura = PrefatturaRighe.objects.filter(prefattura=prefattura)
+    for riga in righe_prefattura:
+        riga.delete()
+    prefattura.delete()
 
+    messages.success(request, f'Prefattura n: {numero_prefattura} eliminata')
+    return redirect('mainapp:situazione_prefatture')
+
+"""
 
 def filter_righe_listino(request, pk):
     prefattura = get_object_or_404(Prefattura, pk=pk)
@@ -861,7 +871,7 @@ def edit_prefattura(request, pk):
     prefattura = get_object_or_404(Prefattura, pk=pk)
     righe_prefattura = PrefatturaRighe.objects.filter(prefattura=prefattura)
 
-    magazzini = Magazzino.objects.values_list('id', 'magazzino_nome')
+    magazzini = Magazzino.objects.values_list('id', 'magazzino_lettera')
     mezzi = Mezzo.objects.values_list('id', 'mezzo_nome')
     tipologie = Tipologia.objects.values_list('id', 'tipologia_nome')
     partenze = Zona.objects.values_list('id', 'zona_nome')
@@ -884,10 +894,134 @@ def edit_prefattura(request, pk):
         if listino_id and quantita:
             listino = get_object_or_404(Listino, id=listino_id)
             PrefatturaRighe.objects.create(prefattura=prefattura, riga_listino=listino, quantita=quantita)
+            messages.success(request, "Inserimento riga avvenuto")
             return redirect('mainapp:edit_prefattura', pk=pk)
 
     return render(request, "mainapp/edit_prefattura.html", context)
+"""
 
 def elimina_riga_prefattura(request, pk):
-    pass
+    riga_prefattura = PrefatturaRighe.objects.get(pk=pk)
+    pk_fattura = riga_prefattura.prefattura.pk
 
+    riga_prefattura.delete()
+    messages.success(request, "Riga eliminata correttamente")
+    return redirect("mainapp:new_edit_prefattura",pk=pk_fattura)
+
+
+# VIEW CHE CHIAMO IN MANIERA ASINCORNA DAL TEMPLATE SULL'ONCHANGE DELLE VARIE SELECT
+def new_edit_prefattura(request, pk):
+    prefattura = get_object_or_404(Prefattura, pk=pk)
+    righe_prefattura = PrefatturaRighe.objects.filter(prefattura=prefattura)
+
+    magazzini_di_fornitore = Listino.objects.filter(
+        fornitore=prefattura.fattura_fornitore,
+        magazzino=OuterRef('pk')
+    ).values('magazzino')
+    magazzini = Magazzino.objects.filter(pk__in=Subquery(magazzini_di_fornitore))
+
+    
+    context = {
+        'prefattura': prefattura,
+        'righe_prefattura': righe_prefattura,
+        'magazzini': magazzini
+    }
+    
+    if request.method == 'POST':
+        listino_id = request.POST.get('listino_id')
+        quantita = request.POST.get('quantita')
+
+        if listino_id and quantita:
+            listino = get_object_or_404(Listino, id=listino_id)
+            PrefatturaRighe.objects.create(prefattura=prefattura, riga_listino=listino, quantita=quantita)
+            messages.success(request, "Inserimento riga avvenuto")
+            return redirect('mainapp:new_edit_prefattura', pk=pk)
+
+    return render(request, "mainapp/new_edit_prefattura.html", context)
+
+"""
+def rew_filter_righe_listino(request):
+    pk = request.GET.get('pk');  # primary key della prefattura 
+    prefattura = get_object_or_404(Prefattura, pk=pk)
+    righe_listino = Listino.objects.filter(fornitore=prefattura.fattura_fornitore)
+
+    magazzino = request.GET.get('magazzino')
+    mezzo = request.GET.get('mezzo')
+    tipologia = request.GET.get('tipologia')
+    partenza = request.GET.get('partenza')
+    arrivo = request.GET.get('arrivo')
+
+    if magazzino:
+        righe_listino = righe_listino.filter(magazzino=magazzino)
+    if mezzo:
+        righe_listino = righe_listino.filter(mezzo=mezzo)
+    if tipologia:
+        righe_listino = righe_listino.filter(tipologia__tipologia_nome=tipologia)
+    if partenza:
+        righe_listino = righe_listino.filter(partenza__zona_nome=partenza)
+    if arrivo:
+        righe_listino = righe_listino.filter(arrivo__zona_nome=arrivo)
+
+    data = []
+    for riga in righe_listino:
+        data.append({
+            'id': riga.id,
+            'magazzino': riga.magazzino.magazzino_lettera,
+            'mezzo': riga.mezzo.mezzo_nome,
+            'tipologia': riga.tipologia.tipologia_nome,
+            'partenza': riga.partenza.zona_nome,
+            'arrivo': riga.arrivo.zona_nome,
+            'costo': riga.costo,
+        })
+
+    return JsonResponse(data, safe=False)
+"""
+def rew_filter_righe_listino(request):
+    pk = request.GET.get('pk')
+    prefattura = get_object_or_404(Prefattura, pk=pk)
+    righe_listino = Listino.objects.filter(fornitore=prefattura.fattura_fornitore)
+
+    magazzino = request.GET.get('magazzino')
+    mezzo = request.GET.get('mezzo')
+    tipologia = request.GET.get('tipologia')
+    partenza = request.GET.get('partenza')
+    arrivo = request.GET.get('arrivo')
+
+    if magazzino:
+        righe_listino = righe_listino.filter(magazzino=magazzino)
+    if mezzo:
+        righe_listino = righe_listino.filter(mezzo=mezzo)
+    if tipologia:
+        righe_listino = righe_listino.filter(tipologia=tipologia)
+    if partenza:
+        righe_listino = righe_listino.filter(partenza=partenza)
+    if arrivo:
+        righe_listino = righe_listino.filter(arrivo=arrivo)
+
+    data = []
+    for riga in righe_listino:
+        data.append({
+            'id': riga.id,
+            'magazzino': riga.magazzino.magazzino_lettera,
+            'mezzo': riga.mezzo.mezzo_nome,
+            'tipologia': riga.tipologia.tipologia_nome,
+            'partenza': riga.partenza.zona_nome,
+            'arrivo': riga.arrivo.zona_nome,
+            'costo': riga.costo,
+        })
+
+    # Ottieni le opzioni uniche per ogni select
+    magazzini = righe_listino.values('magazzino__id', 'magazzino__magazzino_lettera').distinct()
+    mezzi = righe_listino.values('mezzo__id', 'mezzo__mezzo_nome').distinct()
+    tipologie = righe_listino.values('tipologia__id', 'tipologia__tipologia_nome').distinct()
+    partenze = righe_listino.values('partenza__id', 'partenza__zona_nome').distinct()
+    arrivi = righe_listino.values('arrivo__id', 'arrivo__zona_nome').distinct()
+
+    return JsonResponse({
+        'righe': data,
+        'magazzini': list(magazzini),
+        'mezzi': list(mezzi),
+        'tipologie': list(tipologie),
+        'partenze': list(partenze),
+        'arrivi': list(arrivi)
+    }, safe=False)

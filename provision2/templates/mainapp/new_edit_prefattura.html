@@ -10,17 +10,17 @@
             display: flex;
             flex-wrap: wrap;
             padding-left: 20px;  
-            padding-right: 20px; 
+            padding-right: 10px; 
         }
         .search-container {
-            width: 20%;
-            padding-right: 20px;
+            width: 15%;
+            padding-right: 10px;
         }
         .table-container {
-            width: 80%;
+            width: 85%;
         }
         .scrollable-table {
-            max-height: 200px;  /* Puoi modificare questo valore secondo le tue esigenze */
+            max-height: 200px;  
             overflow-y: auto;
             margin-bottom: 20px;
         }
@@ -35,7 +35,7 @@
         }
         .table-container table thead th,
         .table-container table tbody td {
-            font-size: 12px !important;
+            font-size: 11px !important;
         }
 
     </style>
@@ -47,7 +47,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'mainapp:situazione_prefatture' %}">Prefatture</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Modifica Prefattura {{ prefattura.fattura_numero }}</li>
+            <li class="breadcrumb-item active" aria-current="page">Modifica Prefattura {{ prefattura.fattura_numero }} di {{prefattura.fattura_fornitore.fornitore_nome}}</li>
         </ol>
     </nav>
 
@@ -57,50 +57,42 @@
             <form id="filtroForm">
                 <div class="form-group">
                     <label for="magazzino">Magazzino:</label>
-                    <select class="form-control" id="magazzino" name="magazzino">
+                    <select class="form-control" id="magazzino" name="magazzino" onchange="magazzinoSelezionato(this.value)">
                         <option value="">Tutti i magazzini</option>
-                        {% for id, lettera in magazzini %}
-                            <option value="{{ lettera }}">{{ lettera }}</option>
-                        {% endfor %}
+                        {% for magazzino in magazzini %}
+                            <option value={{magazzino.pk}}> {{magazzino.magazzino_lettera}}</option>
+                        {% endfor%}
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="mezzo">Mezzo:</label>
-                    <select class="form-control" id="mezzo" name="mezzo">
+                    <select class="form-control" id="mezzo" name="mezzo" onchange="mezzoSelezionato(this.value)">
                         <option value="">Tutti i mezzi</option>
-                        {% for id, nome in mezzi %}
-                            <option value="{{ nome }}">{{ nome }}</option>
-                        {% endfor %}
+
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="tipologia">Tipologia:</label>
-                    <select class="form-control" id="tipologia" name="tipologia">
+                    <select class="form-control" id="tipologia" name="tipologia"  onchange="tipologiaSelezionata(this.value)">
                         <option value="">Tutte le tipologie</option>
-                        {% for id, nome in tipologie %}
-                            <option value="{{ nome }}">{{ nome }}</option>
-                        {% endfor %}
+
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="partenza">Partenza:</label>
-                    <select class="form-control" id="partenza" name="partenza">
+                    <select class="form-control" id="partenza" name="partenza" onchange="partenzaSelezionata(this.value)">
                         <option value="">Tutte le partenze</option>
-                        {% for id, nome in partenze %}
-                            <option value="{{ nome }}">{{ nome }}</option>
-                        {% endfor %}
+
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="arrivo">Arrivo:</label>
-                    <select class="form-control" id="arrivo" name="arrivo">
+                    <select class="form-control" id="arrivo" name="arrivo" onchange="arrivoSelezionato(this.value)">
                         <option value="">Tutti gli arrivi</option>
-                        {% for id, nome in arrivi %}
-                            <option value="{{ nome }}">{{ nome }}</option>
-                        {% endfor %}
+
                     </select>
                 </div>
-                <button type="button" style="background-color: #FFB90F; color:white; margin-top: 5px;" id="rimuoviFiltri">Rimuovi Filtri</button>
+                <button type="button" style="background-color: #FFB90F; color:white; margin-top: 5px;" id="rimuoviFiltri" onclick="resetFormFiltri()">Rimuovi Filtri</button>
             </form>
         </div>
 
@@ -110,13 +102,16 @@
                 <table class="table table-hover dataTable">
                     <thead>
                         <tr>
-                            <th scope="col">Magazzino</th>
+                            <th scope="col">Mag</th>
                             <th scope="col">Mezzo</th>
-                            <th scope="col">Tipologia</th>
+                            <th scope="col">Tipo</th>
                             <th scope="col">Partenza</th>
                             <th scope="col">Arrivo</th>
                             <th scope="col">Costo</th>
                             <th scope="col">Quantità</th>
+                            <th scope="col">Conto</th>
+                            <th scope="col">V.S</th>
+                            <th scope="col">C.D.C</th>
                             <th scope="col">Azioni</th>
                         </tr>
                     </thead>
@@ -130,6 +125,9 @@
                             <td>{{ riga.riga_listino.arrivo.zona_nome }}</td>
                             <td>{{ riga.riga_listino.costo }}</td>
                             <td>{{ riga.quantita }}</td>
+                            <td>{{ riga.riga_listino.conto_contabile }} </td>
+                            <td>{{ riga.riga_listino.voce_spesa }} </td>
+                            <td>{{ riga.riga_listino.centro_costo }} </td>
                             <td>
                                 <div class="action-buttons">
                                     <form id="deleteForm_{{ riga.id }}" method="post" action="{% url 'mainapp:elimina_riga_prefattura' riga.id %}" style="display: inline;">
@@ -150,7 +148,7 @@
                 <table class="table table-hover dataTable" id="righeListinoTable">
                     <thead>
                         <tr>
-                            <th scope="col">Magazzino</th>
+                            <th scope="col">Mag</th>
                             <th scope="col">Mezzo</th>
                             <th scope="col">Tipologia</th>
                             <th scope="col">Partenza</th>
@@ -195,16 +193,23 @@
         </div>
     </div>
 
-    <div id="prefatturaData" 
-        data-pk="{{ prefattura.pk }}"
-        data-filter-url="{% url 'mainapp:filter_righe_listino' prefattura.pk %}"
-        data-edit-url="{% url 'mainapp:edit_prefattura' prefattura.pk %}"
-        style="display: none;">
+    <!-- div dove infilo la roba hidden-->
+    <div>
+        <input type="hidden" id="prefattura_pk" value = {{prefattura.pk}}>
+        <input type="hidden" id="magazzino_selezionato" value="">
+        <input type="hidden" id="mezzo_selezionato" value=""> 
+        <input type="hidden" id="tipologia_selezionato" value=""> 
+        <input type="hidden" id="partenza_selezionato" value="">
+        <input type="hidden" id="arrivo_selezionato" value="">   
     </div>
-    
+
+    <script>
+        window.filterRigheListinoUrl = "{% url 'mainapp:new_filter_righe_listino'%}";
+    </script>
+
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="{% static 'script/script.js' %}"></script>
+    <script src="{% static 'script/prefatture.js' %}"></script>
 
 {% endblock %}
 

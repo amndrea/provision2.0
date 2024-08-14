@@ -93,16 +93,11 @@ class Prefattura(models.Model):
     fattura_numero = models.IntegerField()
     fattura_data = models.DateField()
     fattura_documento = models.FileField(upload_to='documenti/')
-
+    data_modifica = models.DateField(auto_now=True)
+    finito = models.BooleanField(default=False)
+    
     fattura_fornitore = models.ForeignKey(Fornitore, on_delete=models.PROTECT)
     fattura_utente = models.ForeignKey(User, on_delete=models.PROTECT)
-
-    data_modifica = models.DateField(auto_now=True)
-    # Nella fattura sono group_by (Centro Costo, Voce Spesa, Conto Contabile iniseme, queste fanno un unica riga della fattura)
-    # magazzino
-    # importo => somma di tutti gli importi del documento
-
-
 
 class PrefatturaRighe(models.Model):
     prefattura = models.ForeignKey(Prefattura, on_delete=models.PROTECT)
