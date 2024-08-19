@@ -38,6 +38,16 @@
             font-size: 11px !important;
         }
 
+        /* per mettere il pulante a destra del titolo */
+        #top-div {
+            display: flex;
+            align-items: center; 
+        }
+
+        .blue-button {
+            margin-left: auto;
+        }
+
     </style>
 {% endblock %}
 
@@ -92,12 +102,15 @@
 
                     </select>
                 </div>
-                <button type="button" style="background-color: #FFB90F; color:white; margin-top: 5px;" id="rimuoviFiltri" onclick="resetFormFiltri()">Rimuovi Filtri</button>
+                <button class="yellow-button" style="margin-top: 5px;" id="rimuoviFiltri" onclick="resetFormFiltri()">Rimuovi Filtri</button>
             </form>
         </div>
 
         <div class="table-container">
-            <h4 style="color: teal;">Righe Prefattura</h4>
+            <div id="top-div">
+                <h4 style="color: teal;">Righe Prefattura</h4>
+                <a href="{% url 'mainapp:calcola_prefattura' prefattura.pk %}" class="blue-button">Calcola</a>
+            </div>
             <div class="scrollable-table">
                 <table class="table table-hover dataTable">
                     <thead>

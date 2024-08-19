@@ -13,14 +13,31 @@ from openpyxl import load_workbook
 import pandas as pd
 import json
 import io
+from django.http import HttpResponse
+from django.core.files.base import ContentFile
+
 from django.shortcuts import render
 from django.contrib import messages
 from .tools import *
 from django.contrib.auth.decorators import user_passes_test
 from datetime import date
 from django.http import JsonResponse
+from django.db.models import Sum, F
+from django.db.models.functions import Coalesce
 
 
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from io import BytesIO
+from .models import Prefattura, PrefatturaRighe
+from django.db.models import Sum, F
+from datetime import date
+from django.utils import timezone
 
 # -------------------------------------------------------------------------------------------------------------- #
 # ---------------------------------- ANAGRAFICA FORNITORI ------------------------------------------------------ #
@@ -768,14 +785,18 @@ def situazione_prefatture(request):
     numero_fattura = request.GET.get('numero_fattura')
     fornitore_id = request.GET.get('fornitore')
     data = request.GET.get('data')
-    
+    finito = request.GET.get('finito')
+    print("la finito vale", finito)
+
     if numero_fattura:
         prefatture = prefatture.filter(fattura_numero=numero_fattura)
     if fornitore_id:
         prefatture = prefatture.filter(fattura_fornitore_id=fornitore_id)
     if data:
         prefatture = prefatture.filter(fattura_data=data)
-    
+    if finito:
+        prefatture = prefatture.filter(finito=finito)
+        
     # Paginazione
     paginator = Paginator(prefatture, 15)
     page_number = request.GET.get('page')
@@ -830,75 +851,8 @@ def elimina_prefattura(request, pk):
     messages.success(request, f'Prefattura n: {numero_prefattura} eliminata')
     return redirect('mainapp:situazione_prefatture')
 
-"""
 
-def filter_righe_listino(request, pk):
-    prefattura = get_object_or_404(Prefattura, pk=pk)
-    righe_listino = Listino.objects.filter(fornitore=prefattura.fattura_fornitore)
 
-    magazzino = request.GET.get('magazzino')
-    mezzo = request.GET.get('mezzo')
-    tipologia = request.GET.get('tipologia')
-    partenza = request.GET.get('partenza')
-    arrivo = request.GET.get('arrivo')
-
-    if magazzino:
-        righe_listino = righe_listino.filter(magazzino__magazzino_nome=magazzino)
-    if mezzo:
-        righe_listino = righe_listino.filter(mezzo__mezzo_nome=mezzo)
-    if tipologia:
-        righe_listino = righe_listino.filter(tipologia__tipologia_nome=tipologia)
-    if partenza:
-        righe_listino = righe_listino.filter(partenza__zona_nome=partenza)
-    if arrivo:
-        righe_listino = righe_listino.filter(arrivo__zona_nome=arrivo)
-
-    data = []
-    for riga in righe_listino:
-        data.append({
-            'id': riga.id,
-            'magazzino': riga.magazzino.magazzino_lettera,
-            'mezzo': riga.mezzo.mezzo_nome,
-            'tipologia': riga.tipologia.tipologia_nome,
-            'partenza': riga.partenza.zona_nome,
-            'arrivo': riga.arrivo.zona_nome,
-            'costo': riga.costo,
-        })
-
-    return JsonResponse(data, safe=False)
-
-def edit_prefattura(request, pk):
-    prefattura = get_object_or_404(Prefattura, pk=pk)
-    righe_prefattura = PrefatturaRighe.objects.filter(prefattura=prefattura)
-
-    magazzini = Magazzino.objects.values_list('id', 'magazzino_lettera')
-    mezzi = Mezzo.objects.values_list('id', 'mezzo_nome')
-    tipologie = Tipologia.objects.values_list('id', 'tipologia_nome')
-    partenze = Zona.objects.values_list('id', 'zona_nome')
-    arrivi = Zona.objects.values_list('id', 'zona_nome')
-
-    context = {
-        'prefattura': prefattura,
-        'righe_prefattura': righe_prefattura,
-        'magazzini': magazzini,
-        'mezzi': mezzi,
-        'tipologie': tipologie,
-        'partenze': partenze,
-        'arrivi': arrivi,
-    }
-
-    if request.method == 'POST':
-        listino_id = request.POST.get('listino_id')
-        quantita = request.POST.get('quantita')
-
-        if listino_id and quantita:
-            listino = get_object_or_404(Listino, id=listino_id)
-            PrefatturaRighe.objects.create(prefattura=prefattura, riga_listino=listino, quantita=quantita)
-            messages.success(request, "Inserimento riga avvenuto")
-            return redirect('mainapp:edit_prefattura', pk=pk)
-
-    return render(request, "mainapp/edit_prefattura.html", context)
-"""
 
 def elimina_riga_prefattura(request, pk):
     riga_prefattura = PrefatturaRighe.objects.get(pk=pk)
@@ -932,50 +886,19 @@ def new_edit_prefattura(request, pk):
         quantita = request.POST.get('quantita')
 
         if listino_id and quantita:
+            if int(quantita) <= 0:
+                messages.error(request,"Errore: la quantità non può essere negativa")
+                return render(request, "mainapp/new_edit_prefattura.html", context)
             listino = get_object_or_404(Listino, id=listino_id)
             PrefatturaRighe.objects.create(prefattura=prefattura, riga_listino=listino, quantita=quantita)
+            prefattura.data_modifica = timezone.now()
+            prefattura.save()
             messages.success(request, "Inserimento riga avvenuto")
             return redirect('mainapp:new_edit_prefattura', pk=pk)
 
     return render(request, "mainapp/new_edit_prefattura.html", context)
 
-"""
-def rew_filter_righe_listino(request):
-    pk = request.GET.get('pk');  # primary key della prefattura 
-    prefattura = get_object_or_404(Prefattura, pk=pk)
-    righe_listino = Listino.objects.filter(fornitore=prefattura.fattura_fornitore)
 
-    magazzino = request.GET.get('magazzino')
-    mezzo = request.GET.get('mezzo')
-    tipologia = request.GET.get('tipologia')
-    partenza = request.GET.get('partenza')
-    arrivo = request.GET.get('arrivo')
-
-    if magazzino:
-        righe_listino = righe_listino.filter(magazzino=magazzino)
-    if mezzo:
-        righe_listino = righe_listino.filter(mezzo=mezzo)
-    if tipologia:
-        righe_listino = righe_listino.filter(tipologia__tipologia_nome=tipologia)
-    if partenza:
-        righe_listino = righe_listino.filter(partenza__zona_nome=partenza)
-    if arrivo:
-        righe_listino = righe_listino.filter(arrivo__zona_nome=arrivo)
-
-    data = []
-    for riga in righe_listino:
-        data.append({
-            'id': riga.id,
-            'magazzino': riga.magazzino.magazzino_lettera,
-            'mezzo': riga.mezzo.mezzo_nome,
-            'tipologia': riga.tipologia.tipologia_nome,
-            'partenza': riga.partenza.zona_nome,
-            'arrivo': riga.arrivo.zona_nome,
-            'costo': riga.costo,
-        })
-
-    return JsonResponse(data, safe=False)
-"""
 def rew_filter_righe_listino(request):
     pk = request.GET.get('pk')
     prefattura = get_object_or_404(Prefattura, pk=pk)
@@ -1025,3 +948,127 @@ def rew_filter_righe_listino(request):
         'partenze': list(partenze),
         'arrivi': list(arrivi)
     }, safe=False)
+
+
+
+
+
+def calcola_prefattura(request, pk):
+    if request.method == 'GET':        
+        prefattura = get_object_or_404(Prefattura, pk=pk)
+        
+        righe = PrefatturaRighe.objects.filter(prefattura=prefattura).select_related('riga_listino')
+        
+        risultati = righe.values(
+            'riga_listino__magazzino__magazzino_lettera',
+            'riga_listino__conto_contabile',
+            'riga_listino__voce_spesa',
+            'riga_listino__centro_costo'
+        ).annotate(
+            totale_costo=Sum(F('quantita') * F('riga_listino__costo'))
+        ).order_by(
+            'riga_listino__magazzino__magazzino_lettera',
+            'riga_listino__conto_contabile',
+            'riga_listino__voce_spesa',
+            'riga_listino__centro_costo'
+        )
+        
+        context = {
+            'prefattura': prefattura,
+            'risultati': risultati,
+            'totale_complessivo': sum(r['totale_costo'] for r in risultati)
+        }
+        
+        return render(request, 'mainapp/calcola_prefattura.html', context)
+
+
+def genera_pdf_prefattura(request, pk):
+    prefattura = get_object_or_404(Prefattura, pk=pk)
+    
+    righe = PrefatturaRighe.objects.filter(prefattura=prefattura).select_related('riga_listino')
+    
+    risultati = righe.values(
+        'riga_listino__magazzino__magazzino_lettera',
+        'riga_listino__conto_contabile',
+        'riga_listino__voce_spesa',
+        'riga_listino__centro_costo'
+    ).annotate(
+        totale_costo=Sum(F('quantita') * F('riga_listino__costo'))
+    ).order_by(
+        'riga_listino__magazzino__magazzino_lettera',
+        'riga_listino__conto_contabile',
+        'riga_listino__voce_spesa',
+        'riga_listino__centro_costo'
+    )
+    
+    totale_complessivo = sum(r['totale_costo'] for r in risultati)
+
+    # Creazione del PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*cm, bottomMargin=1*cm, leftMargin=1*cm, rightMargin=1*cm)
+    elements = []
+
+    # Stili
+    styles = getSampleStyleSheet()
+    normal_style = styles['Normal']
+    header_style = ParagraphStyle('HeaderStyle', parent=styles['Normal'], fontSize=12, spaceAfter=0.5*cm)
+
+    # Intestazione
+    header_data = [
+        ['Fattura n°:', str(prefattura.fattura_numero), 'Data:', prefattura.fattura_data.strftime('%d/%m/%Y')],
+        ['Importo Totale:', f'€ {totale_complessivo:.2f}', 'Funzionario:', 'AMMINISTRAZIONE']
+    ]
+    header_table = Table(header_data, colWidths=[3*cm, 4*cm, 3*cm, 4*cm])
+    header_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 12),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+    ]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 1*cm))
+
+    # Tabella principale
+    data = [['Magazzino', 'Conto Contabile', 'Voce Spesa', 'Centro Costo', 'Importo']]
+    for r in risultati:
+        data.append([
+            r['riga_listino__magazzino__magazzino_lettera'],
+            r['riga_listino__conto_contabile'],
+            r['riga_listino__voce_spesa'],
+            r['riga_listino__centro_costo'],
+            f"€ {r['totale_costo']:.2f}"
+        ])
+
+    table = Table(data, colWidths=[2*cm, 4*cm, 5*cm, 4*cm, 3*cm])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,0), 12),
+        ('BACKGROUND', (0,1), (-1,-1), colors.white),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+    ]))
+    elements.append(table)
+
+    doc.build(elements)
+
+    # Ottieni il contenuto del PDF
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    # Salva il PDF nel campo fattura_documento
+    filename = f"fattura_{prefattura.fattura_numero}.pdf"
+    prefattura.fattura_documento.save(filename, ContentFile(pdf), save=False)
+
+    # Imposta il campo finito a True
+    prefattura.finito = True
+    prefattura.save()
+
+    # Restituisci il PDF come risposta HTTP
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response.write(pdf)
+
+    return response

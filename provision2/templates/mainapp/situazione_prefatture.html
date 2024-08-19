@@ -34,10 +34,22 @@
         <div class="search-container">
             <h4>Filtri</h4>
             <form id="filter-form" method="get">
+                
                 <div class="form-group">
                     <label for="numero_fattura">Numero Fattura:</label>
                     <input type="number" class="form-control" id="numero_fattura" name="numero_fattura" value="{{ numero_fattura }}">
                 </div>
+
+
+                <div class="form-group">
+                    <label for="finito">Stato:</label>
+                    <select class="form-control" id="finito" name="finito">
+                        <option value="">Tutti</option>
+                        <option value=1>Finite</option>
+                        <option value=0>Non finite</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="fornitore">Fornitore:</label>
                     <select class="form-control" id="fornitore" name="fornitore">
@@ -72,6 +84,7 @@
                         <th scope="col">Data</th>
                         <th scope="col">Fornitore</th>
                         <th scope="col">Documento</th>
+                        <th scope="col">Data Modifica</th>
                         <th scope="col">Azioni</th>
                     </tr>
                 </thead>
@@ -89,6 +102,8 @@
                                     N/A
                                 {% endif %}
                             </td>
+                            <td>{{ prefattura.data_modifica|date:"Y-m-d"}}</td>
+
                             <td>
                                 <div class="action-buttons">
                                     <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'mainapp:elimina_prefattura' prefattura.pk %}" style="display: inline;">

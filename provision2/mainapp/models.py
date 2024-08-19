@@ -103,3 +103,4 @@ class PrefatturaRighe(models.Model):
     prefattura = models.ForeignKey(Prefattura, on_delete=models.PROTECT)
     riga_listino = models.ForeignKey(Listino, on_delete=models.PROTECT)
     quantita = models.IntegerField()
+

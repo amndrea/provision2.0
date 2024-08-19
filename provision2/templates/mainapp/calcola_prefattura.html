@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+    <style>
+        #container_prefattura {
+            width: 100%;
+            margin: auto; 
+            display: flex;
+            flex-wrap: wrap;
+            padding-left: 20px;  
+            padding-right: 10px; 
+        }
+        .table-container {
+            width: 100%;
+        }
+        .scrollable-table {
+            max-height: 400px;  
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .scrollable-table table {
+            width: 100%;
+        }
+        .scrollable-table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;  
+            z-index: 1;
+        }
+        .table-container table thead th,
+        .table-container table tbody td {
+            font-size: 11px !important;
+        }
+
+        #top-div {
+            display: flex;
+            align-items: center; 
+        }
+
+        .blue-button {
+            margin-left: auto;
+        }
+
+        .blue-button:hover, .blue-button:focus {
+            color: #fff !important;
+            background-color: teal;
+            border-color: teal;
+            text-decoration: none !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'mainapp:situazione_prefatture' %}">Prefatture</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'mainapp:new_edit_prefattura' prefattura.pk %}">Prefattura {{ prefattura.fattura_numero }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Calcolo Prefattura</li>
+        </ol>
+    </nav>
+
+    <div id="container_prefattura">
+        <div class="table-container">
+            <div id="top-div">
+                <h4 style="color: teal;">Calcolo Prefattura #{{ prefattura.fattura_numero }}</h4>
+                <a href="{% url 'mainapp:genera_pdf_prefattura' prefattura.pk %}" class="blue-button">Stampa</a>
+            </div>
+            <div class="scrollable-table">
+                <table class="table table-hover dataTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">Magazzino</th>
+                            <th scope="col">Conto Contabile</th>
+                            <th scope="col">Voce Spesa</th>
+                            <th scope="col">Centro Costo</th>
+                            <th scope="col">Importo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for riga in risultati %}
+                        <tr>
+                            <td>{{ riga.riga_listino__magazzino__magazzino_lettera }}</td>
+                            <td>{{ riga.riga_listino__conto_contabile }}</td>
+                            <td>{{ riga.riga_listino__voce_spesa }}</td>
+                            <td>{{ riga.riga_listino__centro_costo }}</td>
+                            <td>€ {{ riga.totale_costo|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-info">
+                            <th colspan="3" class="text-right">Totale Complessivo</th>
+                            <th>€ {{ totale_complessivo|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
