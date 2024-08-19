@@ -1,6 +1,7 @@
 # Refactor di provision con Django
 
-1) template base html
-2) navbar
-3) toast
-4) 
+Per tutte le dipendenze dell'env
+pip freeze > requirements.txt
+
+Per installare tutte le dipendenze 
+pip install -r requirements.txt

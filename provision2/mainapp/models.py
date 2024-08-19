@@ -98,6 +98,8 @@ class Prefattura(models.Model):
     
     fattura_fornitore = models.ForeignKey(Fornitore, on_delete=models.PROTECT)
     fattura_utente = models.ForeignKey(User, on_delete=models.PROTECT)
+    societa = models.ForeignKey(Societa, on_delete=models.PROTECT)
+
 
 class PrefatturaRighe(models.Model):
     prefattura = models.ForeignKey(Prefattura, on_delete=models.PROTECT)
