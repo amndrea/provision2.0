@@ -207,8 +207,8 @@ def send_reset_password(request, user_pk):
 @login_required
 def situazione_utente_societa(request, utente_pk):
     utente = get_object_or_404(User, pk=utente_pk)
-    societa_utente = UserSocieta.objects.filter(user=utente)
-    societa_disponibili = Societa.objects.exclude(id__in=societa_utente.values_list('societa', flat=True))
+    societa_utente = UserSocieta.objects.filter(user=utente).order_by('societa__societa_nome')
+    societa_disponibili = Societa.objects.exclude(id__in=societa_utente.values_list('societa', flat=True)).order_by('societa_nome')
 
     if request.method == 'POST':
         societa_id = request.POST.get('societa')
@@ -216,7 +216,7 @@ def situazione_utente_societa(request, utente_pk):
             societa = get_object_or_404(Societa, pk=societa_id)
             UserSocieta.objects.create(user=utente, societa=societa)
             messages.success(request, f"Società {societa.societa_nome} aggiunta all'utente {utente.username}")
-            return redirect('situazione_utente_societa', utente_pk=utente.pk)
+            return redirect('userapp:situazione_utente_societa', utente_pk=utente.pk)
 
     context = {
         'utente': utente,
@@ -231,4 +231,4 @@ def delete_societa_utente(request, societa_pk, utente_pk):
     societa_nome = user_societa.societa.societa_nome
     user_societa.delete()
     messages.success(request, f"Società {societa_nome} rimossa dall'utente {user_societa.user.username}")
-    return redirect('situazione_utente_societa', utente_pk=utente_pk)
+    return redirect('userapp:situazione_utente_societa', utente_pk=utente_pk)

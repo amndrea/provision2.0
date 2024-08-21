@@ -1,45 +1,94 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block head %}
+<style>
+    #container_societa {
+        width: 100%;
+        margin: auto; 
+        display: flex;
+        flex-wrap: wrap;
+        padding-left: 20px;  
+        padding-right: 20px; 
+    }
+    .search-container {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .table-container {
+        width: 100%;
+    }
+    .action-buttons {
+        display: flex;
+        justify-content: space-around;
+    }
+    .personal-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .modal-header {
+        background-color: teal;
+        color: white;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 {% include 'navbar.html' %}
-<div class="container mt-4">
-    <h3>Società di {{ utente.username }}</h3>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Nome Società</th>
-                <th>Azioni</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user_societa in societa_utente %}
-            <tr>
-                <td>{{ user_societa.societa.societa_nome }}</td>
-                <td>
-                    <form action="{% url 'delete_societa_utente' societa_pk=user_societa.societa.pk utente_pk=utente.pk %}" method="POST" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Sei sicuro di voler rimuovere questa società?')">Elimina</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2">Nessuna società associata a questo utente.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active" aria-current="page">Società di {{ utente.username }}</li>
+    </ol>
+</nav>
 
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#aggiungiSocietaModal">
-        Aggiungi Società
-    </button>
+<div id="container_societa">
+    <div class="search-container">
+        <button type="button" class="blue-button" data-toggle="modal" data-target="#aggiungiSocietaModal">
+            Aggiungi Società
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th scope="col">N°</th>
+                    <th scope="col">Nome Società</th>
+                    <th scope="col">Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_societa in societa_utente %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        <td>{{ user_societa.societa.societa_nome }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <form id="deleteForm_{{ forloop.counter }}" method="post" action="{% url 'userapp:delete_societa_utente' societa_pk=user_societa.societa.pk utente_pk=utente.pk %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="button" class="personal-button" title="Elimina" onclick="confirmDelete({{ forloop.counter }})">
+                                        <img src="{% static 'img/cestino.png' %}" width="24px" height="24">
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">Nessuna società associata a questo utente.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Modal per aggiungere una nuova società -->
-<div class="modal fade" id="aggiungiSocietaModal" tabindex="-1" role="dialog" aria-labelledby="aggiungiSocietaModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+<div class="modal fade" id="aggiungiSocietaModal" tabindex="-1" aria-labelledby="aggiungiSocietaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="aggiungiSocietaModalLabel">Aggiungi Società</h5>
@@ -47,37 +96,34 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="{% url 'userapp:situazione_utente_societa' utente_pk=utente.pk %}" method="POST">
-                {% csrf_token %}
-                <div class="modal-body">
+            <div class="modal-body">
+                <form action="{% url 'userapp:situazione_utente_societa' utente_pk=utente.pk %}" method="POST">
+                    {% csrf_token %}
                     <div class="form-group">
-                        <label for="societa">Seleziona Società</label>
+                        <label for="societa">Seleziona Società:</label>
                         <select class="form-control" id="societa" name="societa" required>
                             <option value="">Scegli una società...</option>
                             {% for societa in societa_disponibili %}
-                            <option value="{{ societa.pk }}">{{ societa.societa_nome }}</option>
+                                <option value="{{ societa.pk }}">{{ societa.societa_nome }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
-                    <button type="submit" class="btn btn-primary">Aggiungi</button>
-                </div>
-            </form>
+                    <div class="modal-footer">
+                        <button type="button" class="yellow-button" data-dismiss="modal">Annulla</button>
+                        <button type="submit" class="blue-button">Salva</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-    $(document).ready(function() {
-        {% if messages %}
-        {% for message in messages %}
-        alert("{{ message }}");
-        {% endfor %}
-        {% endif %}
-    });
+    function confirmDelete(id) {
+        var isConfirmed = confirm("Sei sicuro di voler eliminare questa società?");
+        if (isConfirmed) {
+            document.getElementById("deleteForm_" + id).submit();
+        }
+    }
 </script>
 {% endblock %}

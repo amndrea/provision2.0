@@ -31,8 +31,12 @@ urlpatterns = [
 
     # URL per la home dell'utente loggato 
     path("home", home, name="home"),
-    path("main/",include("mainapp.urls")),
+    
+    # URL al quale scarico il tempalte per i nuovi inserimenti
+    path('download-template/', download_template, name='download_template'),
 
+
+    path("main/",include("mainapp.urls")),
     path("user/", include("userapp.urls"))
 
 

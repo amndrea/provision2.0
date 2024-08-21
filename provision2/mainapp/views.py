@@ -546,7 +546,7 @@ class ImportListinoView(View):
                     # Cerco di ottenere le entità esistenti
                     try:
                         fornitore = Fornitore.objects.get(fornitore_nome=row['FORNITORE'])
-                        magazzino = Magazzino.objects.get(magazzino_lettera=row['MAGAZZINO'])
+                        magazzino = Magazzino.objects.get(magazzino_lettera=str(row['MAGAZZINO']))
                         mezzo = Mezzo.objects.get(mezzo_nome=row['MEZZO'])
                         tipologia = Tipologia.objects.get(tipologia_nome=row['TIPOLOGIA'])
                         partenza = Zona.objects.get(zona_nome=row['PARTENZA'])
