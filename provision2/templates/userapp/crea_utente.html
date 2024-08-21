@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+    
+    <style>
+        .my_label {
+            color: teal;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .content-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .form-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item active" aria-current="page">Utenti / Crea nuovo utente</li>
+        </ol>
+    </nav>
+
+    <div class="content-container">
+        <div class="form-container">
+            <form method="POST" action="{% url 'userapp:crea_utente' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="Username" class="my_label">Username</label>
+                    <input type="text" class="form-control" id="Username" name="Username" required>
+                    <small class="form-text text-muted">
+                        * Username obbligatorio e univoco
+                    </small>
+                    <div class="valid-feedback">OK</div>
+                </div>
+                <div class="form-group">
+                    <label for="Email" class="my_label">Email</label>
+                    <input type="email" class="form-control" id="Email" name="Email" required>
+                    <small class="form-text text-muted">
+                        * Email obbligatoria
+                    </small>
+                    <div class="valid-feedback">OK</div>
+                </div>
+                <div class="form-group">
+                    <div class="form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="Acquisti" name="Acquisti">
+                        <label class="form-check-label" for="Acquisti">Acquisti</label>
+                    </div>
+                    <div class="form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="Amministrazione" name="Amministrazione">
+                        <label class="form-check-label" for="Amministrazione">Amministrazione</label>
+                    </div>
+                    <div class="valid-feedback">OK</div>
+                </div>
+                <div class="form-group" id="riga_societa" style="display: none;">
+                    <label for="societa" class="my_label">Società</label>
+                    <select class="form-control" name="Societa" id="Societa" multiple>
+                        {% for soc in societa_context %}
+                            <option value="{{ soc.pk }}">{{ soc.societa_nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">
+                        * Società obbligatoria
+                    </small>
+                </div>
+                <div class="form-group" style="text-align: center; margin-top: 10px;">
+                    <button class="blue-button" type="submit">Crea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var acquisti = document.getElementById('Acquisti');
+            var amministrazione = document.getElementById('Amministrazione');
+            var righe_societa = document.getElementById("riga_societa");
+            acquisti.addEventListener('change', function() {
+                if (this.checked) {
+                    amministrazione.checked = false;
+                    righe_societa.style.display = 'none';
+                    var societa = document.getElementById("Societa");
+                    societa.required = false;
+                } else {
+                    console.log("Acquisti deselezionato");
+                }
+            });
+            
+            amministrazione.addEventListener('change', function() {
+                if (this.checked) {
+                    acquisti.checked = false;
+                    righe_societa.style.display='block';
+                    var societa = document.getElementById("Societa");
+                    societa.required = true;
+                } else {
+                    console.log("Amministrazione deselezionato");
+                    righe_societa.style.display='none';
+                    var societa = document.getElementById("Societa");
+                    societa.required = false;
+                }
+            });
+        });
+
+
+    </script>
+{% endblock %}

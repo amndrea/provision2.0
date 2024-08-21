@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+<style>
+    #container_users {
+        display: flex;
+        width: 100%;
+        height: calc(100vh - 100px); 
+        overflow: hidden;
+        padding-right: 50px; 
+    }
+
+    #filters-container {
+        flex: 0 0 250px;
+        overflow-y: auto;
+        padding-right: 10px;
+        margin-left: 5px;
+    }
+
+    #table-outer-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #table-scroll-container {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #table-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+
+    #table-container table thead {
+        font-size: 14px;
+    }
+
+    #table-container table tbody {
+        font-size: 14px;
+    }
+
+    .table-responsive {
+        min-width: 100%;
+    }
+
+    .pagination {
+        flex-shrink: 0;
+        padding: 10px 0;
+    }
+
+    .pagination .page-link.teal {
+        color: teal;
+    }
+
+    .pagination .page-item.active .page-link.teal {
+        background-color: teal;
+        border-color: teal;
+    }
+
+    .pagination .page-item.page-counter .page-link {
+        color: white;
+        background-color: teal;
+        border-color: teal;
+    }
+
+    .action-button {
+        margin-right: 5px;
+    }
+
+    .form-group-left {
+        max-width: 200px;
+        margin-bottom: 15px;
+    }
+    .button-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+    {% include 'navbar.html' %}  
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Utenti / Visualizza Utenti</li>
+        </ol>
+    </nav>
+
+    <div id="container_users">
+        <div id="filters-container">
+            <form method="get" action="{% url 'userapp:user_list' %}" id="filter-form">
+                <div class="form-group form-group-left">
+                    <label for="username"><span style="color: teal; font-size: 16px;">Cerca Username</span></label>
+                    <input type="text" class="form-control form-control-sm" id="username" name="username" value="{{ username_filter }}" placeholder="Cerca username">
+                </div>
+        
+                <div class="form-group form-group-left">
+                    <label for="ruolo"><span style="color: teal; font-size: 16px;">Ruolo</span></label>
+                    <select class="form-select form-select-sm" id="ruolo" name="ruolo">
+                        <option value="">Tutti</option>
+                        <option value="Amministrazione" {% if ruolo == 'Amministrazione' %}selected{% endif %}>Amministrazione</option>
+                        <option value="Acquisti" {% if ruolo == 'Acquisti' %}selected{% endif %}>Acquisti</option>
+                    </select>
+                </div>
+        
+                <div class="form-group form-group-left">
+                    <label for="societa"><span style="color: teal; font-size: 16px;">Società</span></label>
+                    <select class="form-select form-select-sm" id="societa" name="societa">
+                        <option value="">Tutte</option>
+                        {% for soc in societa %}
+                            <option value="{{ soc.id }}" {% if soc.id|stringformat:"s" == societa_selected %}selected{% endif %}>{{ soc.societa_nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+             
+                <div class="form-group form-group-left button-container">
+                    <button type="submit" class="btn btn-primary" style="margin-top: 5px;">Applica Filtri</button>
+                    <a href="{% url 'userapp:user_list' %}" class="btn btn-secondary" style="background-color: #FFB90F; color: white; margin-top: 5px;">Rimuovi Filtri</a>
+    
+                </div>
+            </form>
+        </div>
+
+        <div id="table-outer-container">
+            <div id="table-scroll-container">
+                <div id="table-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover dataTable" id="table-users">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Nome</th>
+                                    <th scope="col">Mail</th>
+                                    <th scope="col">Ultimo Login</th>
+                                    <th scope="col">Ruolo</th>
+                                    <th scope="col">Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.id }}</td>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>{{ user.last_login|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if user.groups.all %}
+                                                {{ user.groups.first.name }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div style="display: inline-block; margin-left: 20px; margin-right: 10px;">
+                                                <a href="{% url 'userapp:situazione_utente_societa' user.pk %}">
+                                                   {% csrf_token %}
+                                                   <button type="submit" class="personal-button" title="Visualizza Utente">
+                                                       <img src="{% static 'img/utente.png' %}" width="24px" height="24px" alt="Visualizza utente">
+                                                   </button>
+                                                </a>
+                                            </div>
+                                            <div style="display: inline-block; margin-left: 20px; margin-right: 10px;">
+                                                <a href="{% url 'userapp:send_reset_password' user.pk %}">
+                                                   {% csrf_token %}
+                                                   <button type="submit" class="personal-button" title="Reset Password">
+                                                       <img src="{% static 'img/reset_passwprd.png' %}" width="24px" height="24px" alt="Reset password">
+                                                   </button>
+                                                </a>
+                                            </div>
+                                            <div style="display: inline-block; margin-left: 20px; margin-right: 10px;">
+                                                <form id="deleteForm_{{ user.pk }}" method="post" action="{% url 'userapp:elimina_utente' user.pk %}">
+                                                    {% csrf_token %}
+                                                    <button type="button" class="personal-button" onclick="confirmDelete('{{ user.pk }}')" title="Elimina Utente">
+                                                        <img src="{% static 'img/cestino.png' %}" width="24px" height="24px" alt="Elimina utente">
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pagination">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Prima pag</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Indietro</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Prima pag</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Indietro</span>
+                            </li>
+                        {% endif %}
+            
+                        <li class="page-item active page-counter" aria-current="page">
+                            <span class="page-link teal">
+                                Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}
+                                <span class="sr-only">(current)</span>
+                            </span>
+                        </li>
+            
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Avanti</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link teal" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Ultima pag</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Avanti</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link teal">Ultima pag</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(userId) {
+            if (confirm("Sei sicuro di voler eliminare questo utente?")) {
+                document.getElementById("deleteForm_" + userId).submit();
+            }
+        }
+    </script>
+{% endblock %}

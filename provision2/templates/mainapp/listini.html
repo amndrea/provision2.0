@@ -202,24 +202,24 @@
                         <table class="table table-hover dataTable" id="table-2">
                             <thead>
                                 <tr>
-                                    <th scope="col">ID</th>
+                                    <th scope="col" style="display: none !important;">ID</th>
                                     <th scope="col">Fornitore</th>
-                                    <th scope="col">Magazzino</th>
+                                    <th scope="col">Mag</th>
                                     <th scope="col">Mezzo</th>
                                     <th scope="col">Tipo</th>
                                     <th scope="col">Partenza</th>
                                     <th scope="col">Arrivo</th>
                                     <th scope="col">Costo</th>
-                                    <th scope="col">ContoContabile</th>
+                                    <th scope="col">CContabile</th>
                                     <th scope="col">VoceSpesa</th>
                                     <th scope="col">CentroCosto</th>
-                                    <th scope="col">DataValidità</th>
+                                    <th scope="col">Validità</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for riga_listino in listini %}
                                     <tr>
-                                        <td>{{ riga_listino.id }}</td>
+                                        <td style="display: none;">{{ riga_listino.id }}</td>
                                         <td>{{riga_listino.fornitore.fornitore_cod_as}}-{{ riga_listino.fornitore.fornitore_nome}}</td>
                                         <td>{{ riga_listino.magazzino.magazzino_lettera }}</td>
                                         <td>{{ riga_listino.mezzo.mezzo_nome }}</td>

@@ -1,22 +1,19 @@
 from django.urls import path
 from .views import *
-app_name = "UserApp"
+app_name = "userapp"
 
 urlpatterns = [
-
-]
-"""
-    # ---------------------------------------------------------------------------------------------------------------------- #
     # URL al quale creo un nuovo utente
     path('crea_utente', crea_utente, name="crea_utente"),
-    # URL al quale arrivo per resettare la password
+
+    # URL inviato per mail alla quale un utente resetta la propria password
     path('reset_password/<str:reset_token>/', reset_password, name="reset_password"),
+
+    path('users/', UserListView.as_view(), name='user_list'),
+    path('elimina_utente/<int:utente_pk>/',elimina_utente,name="elimina_utente"),
+
     path('send_reset_password/<int:user_pk>/', send_reset_password, name="send_reset_password"),
-    # URL AL QUALE VISUALIZZO GLI UTENTI
-    path('lista_utenti/<str:messaggio>/', lista_utenti, name='lista_utenti'),
-    # URL al qualre promuovo un utente da utente base ad expert
-    path('promuovi_utente/<int:user_pk>/',promuovi_utente, name='promuovi_utente'),
-    # URl for delete a user given the user pk
-    path('delete_user/<int:user_pk>/', delete_user, name="delete_user"),
-    #  
-"""
+
+    path('situazione_utente_societa/<int:utente_pk>/', situazione_utente_societa, name='situazione_utente_societa'),
+    path('delete-societa-utente/<int:societa_pk>/<int:utente_pk>/', delete_societa_utente, name='delete_societa_utente'),
+]

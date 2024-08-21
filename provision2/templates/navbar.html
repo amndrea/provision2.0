@@ -54,7 +54,6 @@
         <img src="{% static 'img/logo.png' %}" width="250" height="40" class="d-inline-block align-top" alt="">
     </a>
 
-
     <div class="collapse navbar-collapse" id="navbarNavDropdown">
         <ul class="navbar-nav">
 
@@ -107,8 +106,8 @@
                         Utenti
                     </a>
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="#">Crea nuovo utente</a>
-                        <a class="dropdown-item" href="#">Visualizza Utenti</a>
+                        <a class="dropdown-item" href="{% url 'userapp:crea_utente' %}">Crea nuovo utente</a>
+                        <a class="dropdown-item" href="{% url 'userapp:user_list' %}">Visualizza Utenti</a>
                     </div>
                 </li>
             {% endif %}

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'navbar.html' %}
+<div class="container mt-4">
+    <h3>Società di {{ utente.username }}</h3>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome Società</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user_societa in societa_utente %}
+            <tr>
+                <td>{{ user_societa.societa.societa_nome }}</td>
+                <td>
+                    <form action="{% url 'delete_societa_utente' societa_pk=user_societa.societa.pk utente_pk=utente.pk %}" method="POST" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Sei sicuro di voler rimuovere questa società?')">Elimina</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">Nessuna società associata a questo utente.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#aggiungiSocietaModal">
+        Aggiungi Società
+    </button>
+</div>
+
+<!-- Modal per aggiungere una nuova società -->
+<div class="modal fade" id="aggiungiSocietaModal" tabindex="-1" role="dialog" aria-labelledby="aggiungiSocietaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aggiungiSocietaModalLabel">Aggiungi Società</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'userapp:situazione_utente_societa' utente_pk=utente.pk %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="societa">Seleziona Società</label>
+                        <select class="form-control" id="societa" name="societa" required>
+                            <option value="">Scegli una società...</option>
+                            {% for societa in societa_disponibili %}
+                            <option value="{{ societa.pk }}">{{ societa.societa_nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
+                    <button type="submit" class="btn btn-primary">Aggiungi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        {% if messages %}
+        {% for message in messages %}
+        alert("{{ message }}");
+        {% endfor %}
+        {% endif %}
+    });
+</script>
+{% endblock %}
