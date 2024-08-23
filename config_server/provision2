@@ -1,0 +1,25 @@
+server {
+	listen 80;
+	server_name 10.1.1.109;
+
+
+
+location /static/ {
+	autoindex on;
+    	alias /home/gcouser/Progetti/provision2/provision2/staticfiles/;
+}
+
+location /media/ {
+	autoindex on;
+   	alias /home/gcouser/Progetti/provision2/provision2/media/;
+}
+
+location /{
+	proxy_pass http://10.1.1.109:8000;
+	    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+}
+
