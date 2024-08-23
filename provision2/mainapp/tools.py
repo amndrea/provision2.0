@@ -32,6 +32,7 @@ def check_esistenza_riga_listino(fornitore, magazzino, mezzo, tipologia, partenz
     )
 
 
+
 def log_to_file(message):
     log_dir = os.path.join(settings.MEDIA_ROOT, 'log')
     os.makedirs(log_dir, exist_ok=True)
@@ -40,3 +41,4 @@ def log_to_file(message):
     
     with open(log_file_path, 'a') as log_file:
         log_file.write(f"{message}\n")
+    

@@ -53,9 +53,8 @@ class Zona(models.Model):
 # Le istanze di questa classe possono essere definite in maniera massiva tramite import o 
 # singolarmente tramite maschera 
 class Listino(models.Model):
-    # impedisce l'eliminazione di un Fornitore se ci sono istanze di Listino che lo referenziano.
     fornitore = models.ForeignKey(Fornitore, on_delete=models.PROTECT)
-    magazzino = models.ForeignKey(Magazzino, on_delete=models.PROTECT) # mag = chi ti sta addebitando il viaggio
+    magazzino = models.ForeignKey(Magazzino, on_delete=models.PROTECT) 
     mezzo = models.ForeignKey(Mezzo, on_delete=models.PROTECT)
     tipologia = models.ForeignKey(Tipologia, on_delete=models.PROTECT)
     partenza = models.ForeignKey(Zona, related_name="partenza", on_delete=models.PROTECT)
@@ -65,14 +64,13 @@ class Listino(models.Model):
     data_ultimo_aggiornamento = models.DateField(default=datetime.date(1997, 12, 23))
     costo = models.FloatField(default=0.0)
 
-    # Anche questi vanno tabellati
     conto_contabile = models.CharField(max_length=25, default = '-')
     voce_spesa = models.CharField(max_length=10, blank=False, null=False)
     centro_costo = models.CharField(max_length=10, blank=False, null=False)
     data_upload = models.DateField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('fornitore', 'magazzino', 'mezzo', 'tipologia', 'partenza', 'arrivo')
+        unique_together = ('fornitore', 'magazzino', 'mezzo', 'tipologia', 'partenza', 'arrivo','conto_contabile','voce_spesa','centro_costo')
 
 
 # -------------------------------------------------------------------------------------------- #
