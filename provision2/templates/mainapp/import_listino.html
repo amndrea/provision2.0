@@ -3,19 +3,29 @@
 
 {% block head %}
     <style>
-        .main_div{
+        .main_div {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
         }
+        #loadingSpinner {
+            display: none;
+        }
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('form').on('submit', function() {
+                $('#importButton').hide();
+                $('#loadingSpinner').show();
+            });
+        });
+    </script>
 {% endblock %}
 
-
 {% block content %}
-
     {% include 'navbar.html' %}
 
     <nav aria-label="breadcrumb">
@@ -24,14 +34,15 @@
         </ol>
     </nav>
 
-
     <div class="main_div">
-        <h3> <span style="color: teal;"> Seleziona il file per l'import dei dati</span></h3>
+        <h3><span style="color: teal;">Seleziona il file per l'import dei dati</span></h3>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="file" name="file" accept=".xlsx">
             <br>
-            <button type="submit" class="blue-button">Importa</button>
+            <button type="submit" id="importButton" class="blue-button">Importa</button>
+            <div id="loadingSpinner" class="spinner-border text-info" role="status">
+            </div>
         </form>
     </div>
 {% endblock %}

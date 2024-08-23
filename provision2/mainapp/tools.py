@@ -2,6 +2,9 @@
 # UTILI AL FUNZIONAMENTO DELL'APPLICAZIONE
 
 from .models import *
+import os
+from django.conf import settings
+from datetime import date
 
 
 # Funzioni per controllare l'esistenza di un fornitore durante la modifica 
@@ -27,3 +30,13 @@ def check_esistenza_riga_listino(fornitore, magazzino, mezzo, tipologia, partenz
         partenza=partenza,
         arrivo=arrivo
     )
+
+
+def log_to_file(message):
+    log_dir = os.path.join(settings.MEDIA_ROOT, 'log')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file_name = f"{date.today().isoformat()}_import.txt"
+    log_file_path = os.path.join(log_dir, log_file_name)
+    
+    with open(log_file_path, 'a') as log_file:
+        log_file.write(f"{message}\n")

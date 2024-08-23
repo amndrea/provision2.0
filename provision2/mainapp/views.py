@@ -1,4 +1,8 @@
 from  .my_import import *
+import time
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
 # -------------------------------------------------------------------------------------------------------------- #
 # ---------------------------------- ANAGRAFICA FORNITORI ------------------------------------------------------ #
 # -------------------------------------------------------------------------------------------------------------- #
@@ -487,8 +491,7 @@ class CustomJSONEncoder(DjangoJSONEncoder):
             return obj.strftime('%Y-%m-%d %H:%M:%S')
         return super().default(obj)
     
-
-
+"""
 class ImportListinoView(View):
     template_name = 'mainapp/import_listino.html'
 
@@ -501,35 +504,52 @@ class ImportListinoView(View):
             return redirect('mainapp:import_listino')
         
         excel_file = request.FILES['file']
-        print(excel_file)
 
+        # Salvataggio  file Excel
+        timestamp = int(time.time())
+        filename = f"listini_{timestamp}.xlsx"
+        relative_filepath = os.path.join('file_upload', filename)
+        absolute_filepath = os.path.join(settings.MEDIA_ROOT, relative_filepath)        
+        # Verifica esistenza directory
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, 'file_upload'), exist_ok=True)
+        
+        # Salva il file
+        with open(absolute_filepath, 'wb+') as destination:
+            for chunk in excel_file.chunks():
+                destination.write(chunk)        
         try:
-            # Leggo il file in memoria
-            file_in_memory = io.BytesIO(excel_file.read())
+            # Riapri il file salvato per l'elaborazione
+            with default_storage.open(absolute_filepath, 'rb') as file:
+                file_in_memory = io.BytesIO(file.read())
             
-            # carico il workbook
             wb = load_workbook(filename=file_in_memory, read_only=True, data_only=True)
-            
-            # primo foglio
             sheet = wb.active
-            
-            # converto il foglio in un DataFrame pandas
             data = sheet.values
             columns = next(data)
             df = pd.DataFrame(data, columns=columns)
 
-            for col in df.columns:
+            def clean_magazzino(val):
+                if pd.isna(val):
+                    return ''
+                if isinstance(val, (int, float)):
+                    return str(int(val))
+                return str(val).strip().upper()
+            
+            # --------------------------------------------------------------- #
+            # pulizia dei dati nel file excel
+            # --------------------------------------------------------------- #
+            df['MAGAZZINO'] = df['MAGAZZINO'].apply(clean_magazzino)
+            string_columns = ['FORNITORE', 'MEZZO', 'TIPOLOGIA', 'PARTENZA', 'ARRIVO', 'CONTOCONTABILE', 'VOCESPESA', 'CENTROCOSTO']
+
+            for col in string_columns:
                 if df[col].dtype == 'object':
                     df[col] = df[col].str.strip().str.upper()
             df['DATA'] = pd.to_datetime(df['DATA']).dt.strftime('%Y-%m-%d')
 
         except Exception as e:
-            print("Errore nel leggere il file")
-            print(f"Errore specifico: {type(e).__name__}, {str(e)}")
             messages.error(request, f'Errore nel leggere il file Excel: {str(e)}')
             return redirect('mainapp:import_listino')
         
-        # Verifica che il file abbia tutte le colonne
         required_columns = ['FORNITORE', 'MAGAZZINO', 'MEZZO', 'TIPOLOGIA', 'PARTENZA', 'ARRIVO', 'COSTO', 'DATA', 'CONTOCONTABILE', 'VOCESPESA', 'CENTROCOSTO']
         if not all(col in df.columns for col in required_columns):
             messages.error(request, 'Il file non contiene tutte le colonne richieste')
@@ -579,16 +599,47 @@ class ImportListinoView(View):
 
                         if riga_listino.data_ultimo_aggiornamento == data_della_riga:
                             print(f'Oggetto id={riga_listino.id} ha la data uguale. data oggetto = {riga_listino.data_ultimo_aggiornamento}, data riga ={data_della_riga} ')
+                            print("*-----INZIO RIGA UGUALE-----------------------------------*")
+                            print("dati_riga")
+                            print(row['FORNITORE'])
+                            print(row['MAGAZZINO'])
+                            print(row['MEZZO'])
+                            print(row['TIPOLOGIA'])
+                            print(row['PARTENZA'])
+                            print(row['ARRIVO'])
+                            print("*-----FINE RIGA UGUALE-----------------------------------*")
                             righe_uguali += 1 
                             continue
                         else:
                             print(f"due date diverse. Data oggetto {riga_listino.data_ultimo_aggiornamento}, data riga{data_della_riga} ")
+                            print("*-----INIZIO RIGA AGGIORNATA-----------------------------------*")
+                            print("dati_riga prima dell'aggiornamento:")
+                            print(f"FORNITORE: {riga_listino.fornitore}")
+                            print(f"MAGAZZINO: {riga_listino.magazzino}")
+                            print(f"MEZZO: {riga_listino.mezzo}")
+                            print(f"TIPOLOGIA: {riga_listino.tipologia}")
+                            print(f"PARTENZA: {riga_listino.partenza}")
+                            print(f"ARRIVO: {riga_listino.arrivo}")
+                            print(f"COSTO: {riga_listino.costo}")
+                            print(f"DATA: {riga_listino.data_ultimo_aggiornamento}")
+                            print(f"CONTO CONTABILE: {riga_listino.conto_contabile}")
+                            print(f"VOCE SPESA: {riga_listino.voce_spesa}")
+                            print(f"CENTRO COSTO: {riga_listino.centro_costo}")
+                            
                             riga_listino.costo = row['COSTO']
                             riga_listino.data_ultimo_aggiornamento = data_della_riga
                             riga_listino.conto_contabile = row['CONTOCONTABILE']
                             riga_listino.voce_spesa =  row['VOCESPESA']
                             riga_listino.centro_costo = row['CENTROCOSTO']
                             riga_listino.save()
+                            
+                            print("dati_riga dopo l'aggiornamento:")
+                            print(f"COSTO: {riga_listino.costo}")
+                            print(f"DATA: {riga_listino.data_ultimo_aggiornamento}")
+                            print(f"CONTO CONTABILE: {riga_listino.conto_contabile}")
+                            print(f"VOCE SPESA: {riga_listino.voce_spesa}")
+                            print(f"CENTRO COSTO: {riga_listino.centro_costo}")
+                            print("*-----FINE RIGA AGGIORNATA-----------------------------------*")
                             righe_aggiornate += 1
                     except Listino.DoesNotExist:
                         Listino.objects.create(
@@ -635,8 +686,423 @@ class ImportListinoView(View):
             messages.success(request, f'Importazione completata. Inserite: {righe_inserite}, '
                                   f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}, Gia presenti: {righe_uguali}')
         return redirect('mainapp:import_listino')
-    
+"""
 
+class ImportListinoView(View):
+    template_name = 'mainapp/import_listino.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
+    
+    def post(self, request):
+        if 'file' not in request.FILES:
+            messages.error(request, 'Nessun file caricato')
+            return redirect('mainapp:import_listino')
+        
+        excel_file = request.FILES['file']
+        
+        try:
+            # Leggo il file in memoria
+            file_in_memory = io.BytesIO(excel_file.read())
+            
+            # carico il workbook
+            wb = load_workbook(filename=file_in_memory, read_only=True, data_only=True)
+            
+            # primo foglio
+            sheet = wb.active
+            
+            # converto il foglio in un DataFrame pandas
+            data = sheet.values
+            columns = next(data)
+            df = pd.DataFrame(data, columns=columns)
+
+            def clean_magazzino(val):
+                if pd.isna(val):
+                    return ''
+                if isinstance(val, (int, float)):
+                    return str(int(val))
+                return str(val).strip().upper()
+            
+            # --------------------------------------------------------------- #
+            # pulizia dei dati nel file excel
+            # --------------------------------------------------------------- #
+            df['MAGAZZINO'] = df['MAGAZZINO'].apply(clean_magazzino)
+            string_columns = ['FORNITORE', 'MEZZO', 'TIPOLOGIA', 'PARTENZA', 'ARRIVO', 'CONTOCONTABILE', 'VOCESPESA', 'CENTROCOSTO']
+
+            for col in string_columns:
+                if df[col].dtype == 'object':
+                    df[col] = df[col].str.strip().str.upper()
+            df['DATA'] = pd.to_datetime(df['DATA']).dt.strftime('%Y-%m-%d')
+
+        except Exception as e:
+            messages.error(request, f'Errore nel leggere il file Excel: {str(e)}')
+            return redirect('mainapp:import_listino')
+        
+        required_columns = ['FORNITORE', 'MAGAZZINO', 'MEZZO', 'TIPOLOGIA', 'PARTENZA', 'ARRIVO', 'COSTO', 'DATA', 'CONTOCONTABILE', 'VOCESPESA', 'CENTROCOSTO']
+        if not all(col in df.columns for col in required_columns):
+            messages.error(request, 'Il file non contiene tutte le colonne richieste')
+            return redirect('mainapp:import_listino')
+        
+        righe_inserite = 0
+        righe_aggiornate = 0
+        righe_fallite = 0
+        righe_uguali = 0
+    
+        for _, row in df.iterrows():
+            try:
+                with transaction.atomic():
+                    # Cerco di ottenere le entità esistenti
+                    try:
+                        fornitore = Fornitore.objects.get(fornitore_nome=row['FORNITORE'])
+                        magazzino = Magazzino.objects.get(magazzino_lettera=str(row['MAGAZZINO']))
+                        mezzo = Mezzo.objects.get(mezzo_nome=row['MEZZO'])
+                        tipologia = Tipologia.objects.get(tipologia_nome=row['TIPOLOGIA'])
+                        partenza = Zona.objects.get(zona_nome=row['PARTENZA'])
+                        arrivo = Zona.objects.get(zona_nome=row['ARRIVO'])
+                    except ObjectDoesNotExist as e:
+                        errore_dettagliato = f"Entità non trovata: {type(e).__name__} - {str(e)}. "
+                        errore_dettagliato += f"Valori riga: FORNITORE={row['FORNITORE']}, "
+                        errore_dettagliato += f"MAGAZZINO={row['MAGAZZINO']}, MEZZO={row['MEZZO']}, "
+                        errore_dettagliato += f"TIPOLOGIA={row['TIPOLOGIA']}, PARTENZA={row['PARTENZA']}, "
+                        errore_dettagliato += f"ARRIVO={row['ARRIVO']}"
+                        raise ValueError(errore_dettagliato)
+
+                    data_della_riga = row['DATA']
+                    if isinstance(data_della_riga, str):
+                        data_della_riga = date.fromisoformat(data_della_riga)
+                    elif isinstance(data_della_riga, (datetime, pd.Timestamp)):
+                        data_della_riga = data_della_riga.date()
+                    else:
+                        raise ValueError(f"Formato data non valido: {data_della_riga}")
+
+                    try:
+                        riga_listino = Listino.objects.get(
+                            fornitore=fornitore,
+                            magazzino=magazzino,
+                            mezzo=mezzo,
+                            tipologia=tipologia,
+                            partenza=partenza,
+                            arrivo=arrivo
+                        )
+
+                        if riga_listino.data_ultimo_aggiornamento == data_della_riga:
+                            print(f'Oggetto id={riga_listino.id} ha la data uguale. data oggetto = {riga_listino.data_ultimo_aggiornamento}, data riga ={data_della_riga} ')
+                            print("*-----INZIO RIGA UGUALE-----------------------------------*")
+                            print("dati_riga")
+                            print(row['FORNITORE'])
+                            print(row['MAGAZZINO'])
+                            print(row['MEZZO'])
+                            print(row['TIPOLOGIA'])
+                            print(row['PARTENZA'])
+                            print(row['ARRIVO'])
+                            print("*-----FINE RIGA UGUALE-----------------------------------*")
+                            righe_uguali += 1 
+                            continue
+                        else:
+                            print(f"due date diverse. Data oggetto {riga_listino.data_ultimo_aggiornamento}, data riga{data_della_riga} ")
+                            print("*-----INIZIO RIGA AGGIORNATA-----------------------------------*")
+                            print("dati_riga prima dell'aggiornamento:")
+                            print(f"FORNITORE: {riga_listino.fornitore}")
+                            print(f"MAGAZZINO: {riga_listino.magazzino}")
+                            print(f"MEZZO: {riga_listino.mezzo}")
+                            print(f"TIPOLOGIA: {riga_listino.tipologia}")
+                            print(f"PARTENZA: {riga_listino.partenza}")
+                            print(f"ARRIVO: {riga_listino.arrivo}")
+                            print(f"COSTO: {riga_listino.costo}")
+                            print(f"DATA: {riga_listino.data_ultimo_aggiornamento}")
+                            print(f"CONTO CONTABILE: {riga_listino.conto_contabile}")
+                            print(f"VOCE SPESA: {riga_listino.voce_spesa}")
+                            print(f"CENTRO COSTO: {riga_listino.centro_costo}")
+                            
+                            riga_listino.costo = row['COSTO']
+                            riga_listino.data_ultimo_aggiornamento = data_della_riga
+                            riga_listino.conto_contabile = row['CONTOCONTABILE']
+                            riga_listino.voce_spesa =  row['VOCESPESA']
+                            riga_listino.centro_costo = row['CENTROCOSTO']
+                            riga_listino.save()
+                            
+                            print("dati_riga dopo l'aggiornamento:")
+                            print(f"COSTO: {riga_listino.costo}")
+                            print(f"DATA: {riga_listino.data_ultimo_aggiornamento}")
+                            print(f"CONTO CONTABILE: {riga_listino.conto_contabile}")
+                            print(f"VOCE SPESA: {riga_listino.voce_spesa}")
+                            print(f"CENTRO COSTO: {riga_listino.centro_costo}")
+                            print("*-----FINE RIGA AGGIORNATA-----------------------------------*")
+                            righe_aggiornate += 1
+                    except Listino.DoesNotExist:
+                        Listino.objects.create(
+                            fornitore=fornitore,
+                            magazzino=magazzino,
+                            mezzo=mezzo,
+                            tipologia=tipologia,
+                            partenza=partenza,
+                            arrivo=arrivo,
+                            data_ultimo_aggiornamento=data_della_riga,
+                            costo=row['COSTO'],
+                            conto_contabile=row['CONTOCONTABILE'],
+                            voce_spesa=row['VOCESPESA'],
+                            centro_costo=row['CENTROCOSTO'])
+                        righe_inserite += 1 
+            except Exception as e:
+                righe_fallite += 1
+                dati_riga = row.to_dict()
+
+                # Converto esplicitamente la colonna 'DATA' in stringa
+                if 'DATA' in dati_riga:
+                    if isinstance(dati_riga['DATA'], (pd.Timestamp, datetime.date)):
+                        dati_riga['DATA'] = dati_riga['DATA'].strftime('%Y-%m-%d')
+                    elif isinstance(dati_riga['DATA'], str):
+                        # Già una stringa, non fare nulla
+                        pass
+                    else:
+                        dati_riga['DATA'] = str(dati_riga['DATA'])  # Converti in stringa come fallback
+                
+                try:
+                    with transaction.atomic():
+                        InserimentoFallito.objects.create(
+                            dati_riga=json.dumps(dati_riga, cls=CustomJSONEncoder),
+                            errore=str(e)
+                        )
+                    print("Inserimento fallito creato")
+                except Exception as inner_e:
+                    print(f"Errore durante la creazione di InserimentoFallito: {str(inner_e)}")
+
+        if righe_fallite > 0:
+             messages.warning(request, f'Importazione completata. Inserite: {righe_inserite}, '
+                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}, Gia presenti: {righe_uguali}')
+        else:    
+            messages.success(request, f'Importazione completata. Inserite: {righe_inserite}, '
+                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}, Gia presenti: {righe_uguali}')
+        
+         # Salvataggio del file sul server
+        try:
+            excel_file = request.FILES['file']
+            timestamp = int(time.time())
+            filename = f"listini_{timestamp}.xlsx"
+            filepath = os.path.join('file_upload', filename)
+            
+            # Assicurati che la directory esista
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, 'file_upload'), exist_ok=True)
+            
+            # Salva il file
+            path = default_storage.save(filepath, ContentFile(excel_file.read()))
+            
+            full_path = os.path.join(settings.MEDIA_ROOT, path)
+            log_to_file("++++++++++++++++++++++++++++++++++++++++++++++++++ \n File salvato con successo \n  ++++++++++++++++++++++++++++++++++++++++++++++++++")
+        except Exception as e:
+            log_to_file("++++++++++++++++++++++++++++++++++++++++++++++++++ \n Errore salvataggio File \n  ++++++++++++++++++++++++++++++++++++++++++++++++++")        
+        return redirect('mainapp:import_listino')
+    
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime.date, pd.Timestamp)):
+            return obj.isoformat()
+        return super().default(obj)
+
+def log_to_file(message):
+    log_dir = os.path.join(settings.MEDIA_ROOT, 'log')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file_name = f"{date.today().isoformat()}_import.txt"
+    log_file_path = os.path.join(log_dir, log_file_name)
+    
+    with open(log_file_path, 'a') as log_file:
+        log_file.write(f"{message}\n")
+"""
+class ImportListinoView(View):
+    template_name = 'mainapp/import_listino.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
+    
+    def post(self, request):
+        if 'file' not in request.FILES:
+            messages.error(request, 'Nessun file caricato')
+            return redirect('mainapp:import_listino')
+        
+        excel_file = request.FILES['file']
+
+        # Salva il file Excel
+        timestamp = int(time.time())
+        filename = f"listini_{timestamp}.xlsx"
+        filepath = os.path.join('listini', filename)
+        
+        # Assicurati che la directory esista
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, 'listini'), exist_ok=True)
+        
+        # Salva il file
+        path = default_storage.save(filepath, ContentFile(excel_file.read()))
+        try:
+            file_in_memory = io.BytesIO(excel_file.read())
+            wb = load_workbook(filename=file_in_memory, read_only=True, data_only=True)
+            sheet = wb.active
+            data = sheet.values
+            columns = next(data)
+            df = pd.DataFrame(data, columns=columns)
+
+            def clean_magazzino(val):
+                if pd.isna(val):
+                    return ''
+                if isinstance(val, (int, float)):
+                    return str(int(val))
+                return str(val).strip().upper()
+            
+            # --------------------------------------------------------------- #
+            # pulizia dei dati nel file excel
+            # --------------------------------------------------------------- #
+            df['MAGAZZINO'] = df['MAGAZZINO'].apply(clean_magazzino)
+            string_columns = ['FORNITORE', 'MEZZO', 'TIPOLOGIA', 'PARTENZA', 'ARRIVO', 'CONTOCONTABILE', 'VOCESPESA', 'CENTROCOSTO']
+
+            for col in string_columns:
+                if df[col].dtype == 'object':
+                    df[col] = df[col].str.strip().str.upper()
+            df['DATA'] = pd.to_datetime(df['DATA']).dt.strftime('%Y-%m-%d')
+
+        except Exception as e:
+            messages.error(request, f'Errore nel leggere il file Excel: {str(e)}')
+            return redirect('mainapp:import_listino')
+        
+        required_columns = ['FORNITORE', 'MAGAZZINO', 'MEZZO', 'TIPOLOGIA', 'PARTENZA', 'ARRIVO', 'COSTO', 'DATA', 'CONTOCONTABILE', 'VOCESPESA', 'CENTROCOSTO']
+        if not all(col in df.columns for col in required_columns):
+            messages.error(request, 'Il file non contiene tutte le colonne richieste')
+            return redirect('mainapp:import_listino')
+        
+        righe_inserite = 0
+        righe_aggiornate = 0
+        righe_fallite = 0
+        righe_uguali = 0
+        
+        for _, row in df.iterrows():
+            try:
+                with transaction.atomic():
+                    try:
+                        fornitore = Fornitore.objects.get(fornitore_nome=row['FORNITORE'])
+                        magazzino = Magazzino.objects.get(magazzino_lettera=str(row['MAGAZZINO']))
+                        mezzo = Mezzo.objects.get(mezzo_nome=row['MEZZO'])
+                        tipologia = Tipologia.objects.get(tipologia_nome=row['TIPOLOGIA'])
+                        partenza = Zona.objects.get(zona_nome=row['PARTENZA'])
+                        arrivo = Zona.objects.get(zona_nome=row['ARRIVO'])
+                    except ObjectDoesNotExist as e:
+                        errore_dettagliato = f"Entità non trovata: {type(e).__name__} - {str(e)}. "
+                        errore_dettagliato += f"Valori riga: FORNITORE={row['FORNITORE']}, "
+                        errore_dettagliato += f"MAGAZZINO={row['MAGAZZINO']}, MEZZO={row['MEZZO']}, "
+                        errore_dettagliato += f"TIPOLOGIA={row['TIPOLOGIA']}, PARTENZA={row['PARTENZA']}, "
+                        errore_dettagliato += f"ARRIVO={row['ARRIVO']}"
+                        raise ValueError(errore_dettagliato)
+
+                    data_della_riga = row['DATA']
+                    if isinstance(data_della_riga, str):
+                        data_della_riga = date.fromisoformat(data_della_riga)
+                    elif isinstance(data_della_riga, (datetime, pd.Timestamp)):
+                        data_della_riga = data_della_riga.date()
+                    else:
+                        raise ValueError(f"Formato data non valido: {data_della_riga}")
+
+                    try:
+                        riga_listino = Listino.objects.get(
+                            fornitore=fornitore,
+                            magazzino=magazzino,
+                            mezzo=mezzo,
+                            tipologia=tipologia,
+                            partenza=partenza,
+                            arrivo=arrivo
+                        )
+
+                        if riga_listino.data_ultimo_aggiornamento == data_della_riga:
+                            log_message = (
+                                "*-----INIZIO RIGA UGUALE-----------------------------------*\n"
+                                f"Oggetto id={riga_listino.id} ha la data uguale. data oggetto = {riga_listino.data_ultimo_aggiornamento}, data riga ={data_della_riga}\n"
+                                f"FORNITORE: {row['FORNITORE']}\n"
+                                f"MAGAZZINO: {row['MAGAZZINO']}\n"
+                                f"MEZZO: {row['MEZZO']}\n"
+                                f"TIPOLOGIA: {row['TIPOLOGIA']}\n"
+                                f"PARTENZA: {row['PARTENZA']}\n"
+                                f"ARRIVO: {row['ARRIVO']}\n"
+                                "*-----FINE RIGA UGUALE-----------------------------------*\n"
+                            )
+                            log_to_file(log_message)
+                            righe_uguali += 1 
+                            continue
+                        else:
+                            log_message = (
+                                "*-----INIZIO RIGA AGGIORNATA-----------------------------------*\n"
+                                f"Due date diverse. Data oggetto {riga_listino.data_ultimo_aggiornamento}, data riga {data_della_riga}\n"
+                                "Dati riga prima dell'aggiornamento:\n"
+                                f"FORNITORE: {riga_listino.fornitore.fornitore_nome}\n"
+                                f"MAGAZZINO: {riga_listino.magazzino.magazzino_lettera}\n"
+                                f"MEZZO: {riga_listino.mezzo.mezzo_nome}\n"
+                                f"TIPOLOGIA: {riga_listino.tipologia.tipologia_nome}\n"
+                                f"PARTENZA: {riga_listino.partenza.zona_nome}\n"
+                                f"ARRIVO: {riga_listino.arrivo.zona_nome}\n"
+                                f"COSTO: {riga_listino.costo}\n"
+                                f"DATA: {riga_listino.data_ultimo_aggiornamento}\n"
+                                f"CONTO CONTABILE: {riga_listino.conto_contabile}\n"
+                                f"VOCE SPESA: {riga_listino.voce_spesa}\n"
+                                f"CENTRO COSTO: {riga_listino.centro_costo}\n"
+                            )
+                            log_to_file(log_message)
+                            
+                            riga_listino.costo = row['COSTO']
+                            riga_listino.data_ultimo_aggiornamento = data_della_riga
+                            riga_listino.conto_contabile = row['CONTOCONTABILE']
+                            riga_listino.voce_spesa =  row['VOCESPESA']
+                            riga_listino.centro_costo = row['CENTROCOSTO']
+                            riga_listino.save()
+                            
+                            log_message = (
+                                "Dati riga dopo l'aggiornamento:\n"
+                                f"COSTO: {riga_listino.costo}\n"
+                                f"DATA: {riga_listino.data_ultimo_aggiornamento}\n"
+                                f"CONTO CONTABILE: {riga_listino.conto_contabile}\n"
+                                f"VOCE SPESA: {riga_listino.voce_spesa}\n"
+                                f"CENTRO COSTO: {riga_listino.centro_costo}\n"
+                                "*-----FINE RIGA AGGIORNATA-----------------------------------*\n"
+                            )
+                            log_to_file(log_message)
+                            righe_aggiornate += 1
+                    except Listino.DoesNotExist:
+                        Listino.objects.create(
+                            fornitore=fornitore,
+                            magazzino=magazzino,
+                            mezzo=mezzo,
+                            tipologia=tipologia,
+                            partenza=partenza,
+                            arrivo=arrivo,
+                            data_ultimo_aggiornamento=data_della_riga,
+                            costo=row['COSTO'],
+                            conto_contabile=row['CONTOCONTABILE'],
+                            voce_spesa=row['VOCESPESA'],
+                            centro_costo=row['CENTROCOSTO'])
+                        righe_inserite += 1 
+            except Exception as e:
+                righe_fallite += 1
+                dati_riga = row.to_dict()
+
+                if 'DATA' in dati_riga:
+                    if isinstance(dati_riga['DATA'], (pd.Timestamp, datetime.date)):
+                        dati_riga['DATA'] = dati_riga['DATA'].strftime('%Y-%m-%d')
+                    elif isinstance(dati_riga['DATA'], str):
+                        pass
+                    else:
+                        dati_riga['DATA'] = str(dati_riga['DATA'])
+                
+                try:
+                    with transaction.atomic():
+                        InserimentoFallito.objects.create(
+                            dati_riga=json.dumps(dati_riga, cls=CustomJSONEncoder),
+                            errore=str(e)
+                        )
+                except Exception as inner_e:
+                    log_to_file(f"Errore durante la creazione di InserimentoFallito: {str(inner_e)}")
+
+        if righe_fallite > 0:
+             messages.warning(request, f'Importazione completata. Inserite: {righe_inserite}, '
+                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}, Gia presenti: {righe_uguali}')
+        else:    
+            messages.success(request, f'Importazione completata. Inserite: {righe_inserite}, '
+                                  f'Aggiornate: {righe_aggiornate}, Fallite: {righe_fallite}, Gia presenti: {righe_uguali}')
+        return redirect('mainapp:import_listino')
+    
+"""
 class ListinoListView(ListView):
     model = Listino
     paginate_by = 40
